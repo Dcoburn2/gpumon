@@ -1,5 +1,9 @@
 # gpumon
 
+[![release](https://github.com/Dcoburn2/gpumon/actions/workflows/release.yml/badge.svg)](https://github.com/Dcoburn2/gpumon/actions/workflows/release.yml)
+[![licence: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![privacy](https://img.shields.io/badge/privacy-nothing%20collected-brightgreen.svg)](PRIVACY.md)
+
 A GPU / system performance logger, in four flavours that all read the same
 sensors and write the same database:
 

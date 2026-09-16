@@ -125,18 +125,22 @@ re-signs it after certification.
 ### Privacy policy
 
 **It exists: `PRIVACY.md` in the repository root.** Partner Center wants a URL,
-not an upload, so it needs to be reachable on the web before you submit. Push the
-repository first, then use one of:
+not an upload, so it needs to be reachable on the web before you submit. The
+repository is at [github.com/Dcoburn2/gpumon](https://github.com/Dcoburn2/gpumon),
+so the URL to give Partner Center is:
 
 ```
-https://github.com/<your-account>/gpumon/blob/main/PRIVACY.md     (the page)
-https://raw.githubusercontent.com/<your-account>/gpumon/main/PRIVACY.md
+https://github.com/Dcoburn2/gpumon/blob/main/PRIVACY.md
 ```
 
-A GitHub URL is accepted — it does not need to be a domain you own. If you would
-rather have a plain page, GitHub Pages serves the repository at
-`https://<your-account>.github.io/gpumon/PRIVACY.md` once enabled in Settings →
-Pages.
+These also work, if the form prefers them:
+
+```
+https://raw.githubusercontent.com/Dcoburn2/gpumon/main/PRIVACY.md
+https://dcoburn2.github.io/gpumon/PRIVACY.md     (after enabling GitHub Pages)
+```
+
+A GitHub URL is accepted — it does not need to be a domain you own.
 
 The policy says the app collects nothing, which is true and checkable: the only
 outbound requests in the whole program are the two GitHub downloads in the
