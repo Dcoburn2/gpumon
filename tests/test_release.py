@@ -28,6 +28,13 @@ import signing
 FOLDERS = ["release", "release-onefile"]
 problems = []
 
+#: These checks are about built artifacts, so they only mean something once
+#: something has been built. In a fresh clone there is nothing to check, and
+#: failing would say "the tests are broken" when the truth is "not built yet".
+#: Continuous integration builds first and then runs this, so it does check.
+BUILT = [folder for folder in FOLDERS
+         if os.path.exists(os.path.join(folder, "SHA256SUMS.txt"))]
+
 
 def check(label: str, ok: bool, detail: str = "") -> None:
     print(f"  {'OK  ' if ok else 'FAIL'} {label}{'  ' + detail if detail else ''}")
@@ -38,6 +45,14 @@ def check(label: str, ok: bool, detail: str = "") -> None:
 print("=" * 84)
 print("RELEASE CHECKSUM TEST")
 print("=" * 84)
+
+if not BUILT:
+    print("\nNothing has been built in this checkout, so there are no artifacts")
+    print("to check. Run:  python scripts/make_release.py --all")
+    print("\nWhat is checked when they exist: each checksum file names the file")
+    print("beside it and matches it, the zip carries the readme and its checksums,")
+    print("and every delivered folder carries the licence.")
+    raise SystemExit(0)
 
 for folder in FOLDERS:
     target = os.path.join(folder, "SHA256SUMS.txt")
@@ -94,6 +109,10 @@ print("\n[the licence travels with the download]")
 # somebody who downloads a zip has no other way to see it.
 for folder in FOLDERS + [os.path.join("store", "layout")]:
     path = os.path.join(folder, "LICENSE")
+    if not os.path.isdir(folder):
+        # The Store layout is only there after make_store_package.py has run.
+        print(f"  --  {folder}/ was not built, so it is not checked")
+        continue
     exists = os.path.exists(path)
     check(f"{folder}/LICENSE is shipped", exists,
           "" if exists else "the download carries no licence")

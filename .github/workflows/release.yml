@@ -29,7 +29,15 @@ jobs:
       - name: Install the build dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install pyinstaller psutil wmi
+          python -m pip install pyinstaller psutil wmi pyyaml
+
+      - name: Build the artifacts
+        # Built before the suite runs, because part of the suite checks the built
+        # artifacts: the checksum files, and the licences inside them, only exist
+        # once something has been built. Testing first is what made the first
+        # attempt at this workflow fail on a clean runner.
+        run: python scripts/make_release.py --all
+        shell: pwsh
 
       - name: Run the test suite
         # The suite is written to pass on a machine with no sensors, no driver
@@ -44,10 +52,6 @@ jobs:
           python gpumon.py --selftest
           if ($LASTEXITCODE -ne 0) { $failed = 1 }
           exit $failed
-        shell: pwsh
-
-      - name: Build the artifacts
-        run: python scripts/make_release.py --all
         shell: pwsh
 
       - name: Sign the artifacts

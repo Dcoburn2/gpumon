@@ -34,10 +34,13 @@ import os
 import pathlib
 import subprocess
 import sys
+import tempfile
 import time
 
 import alarms as A
 import metrics as M
+import msrbackend
+import sensorhelper
 import sensorsetup
 from ui import monitor as MON
 
@@ -80,11 +83,35 @@ source = manager.cpu_temp_source()
 print(f"    source on this machine: {source!r}   platform: {manager.platform_name}")
 check("the source is one of the known names",
       source in ("", "msr", "lhm", "thermal", "acpi"), source)
-check("gpumon's own reader is the preferred source",
-      # Listed first in cpu_temp_source(), and the one that needs no other
-      # program running. On this machine it is the source in use.
-      source == "msr" or not os.path.exists(sensorsetup.setup_marker()),
-      f"source={source!r}")
+# The invariant is about preference, not about this machine's state. Requiring
+# "msr" whenever setup has ever run was wrong: the marker persists, the reading
+# goes stale when the helper stops, and the check then failed on a machine where
+# nothing was being published at all.
+_live = manager.msr.error == "" and manager.msr.reading_age() <= msrbackend.MAX_AGE
+check("gpumon's own reader is preferred whenever it has a live reading",
+      source == "msr" or not _live, f"source={source!r} live={_live}")
+if _live:
+    check("and it is the source in use", source == "msr", source)
+else:
+    print(f"    (nothing is being published right now: "
+          f"{manager.msr.error or 'the reading is stale'})")
+
+# The preference itself, without needing a driver or live sensors: hand the
+# manager a fresh reading of its own and it must choose that over the fallbacks.
+# The payload carries the helper's own timestamp (`t`), which is what the reader
+# ages a reading by - without it the reading looks decades old and is refused.
+_probe = os.path.join(tempfile.gettempdir(), "gpumon-preference.json")
+_probe_beat = _probe + ".heartbeat"
+sensorhelper.write_atomically(_probe, {"t": time.time(), "cpu_temp": 47.0,
+                                       "cpu_clock": 3000.0})
+sensorhelper.touch_heartbeat(_probe_beat)
+manager.msr = msrbackend.MsrBackend(_probe, _probe_beat)
+check("a fresh reading of its own wins over the fallbacks",
+      manager.cpu_temp_source() == "msr", manager.cpu_temp_source())
+manager.msr.stop()
+for _path in (_probe, _probe_beat):
+    if os.path.exists(_path):
+        os.remove(_path)
 caps = manager.capabilities()
 if caps.cpu_temp != bool(source):
     # The helper publishes about once a second, and a reading can age past the

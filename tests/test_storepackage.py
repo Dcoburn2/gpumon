@@ -170,8 +170,12 @@ else:
     print("    (no screenshots yet - run: python store_capture.py)")
 
 print("\n[6] the packaged build and the zip come from one source tree")
-check("both are built by name from the same pyinstaller output",
-      os.path.exists(os.path.join("dist", "gpumon", "gpumon.exe")))
+# Only meaningful once something has been built; a fresh clone has no dist/.
+if os.path.isdir("dist"):
+    check("both are built by name from the same pyinstaller output",
+          os.path.exists(os.path.join("dist", "gpumon", "gpumon.exe")))
+else:
+    print("    --  dist/ was not built, so the shared-output check is skipped")
 check("the manifest is generated, not hand-edited",
       "MANIFEST = " in open(os.path.join("scripts", "make_store_package.py"), encoding="utf-8").read())
 
