@@ -29,8 +29,8 @@ diag*.db-wal
 diag*.db-shm
 diag*/
 acceptance_report.html
-_*.py
-_*.png
+/_*.py
+/_*.png
 
 # Third-party tools downloaded at setup time, never committed
 tools/
