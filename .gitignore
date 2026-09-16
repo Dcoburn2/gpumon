@@ -57,3 +57,10 @@ pawnio-modules/
 *.zip
 release-onefile/
 *.zip.sha256
+
+# The Store package and its build folder; the screenshots are kept, since the
+# submission needs them and they are small.
+store/layout/
+store/*.msix
+store/*.pfx
+store/*.cer

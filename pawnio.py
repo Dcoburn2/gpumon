@@ -206,22 +206,37 @@ class PawnIO:
 def module_path(name: str) -> str:
     """Where gpumon keeps the module blobs it loads.
 
-    Two places, in order: beside the program, which is where `--setup-sensors`
-    puts a freshly downloaded module, and inside the bundle, which is where a
-    packaged build carries them. A release therefore needs no download at all,
-    and a source checkout picks up whatever setup fetched.
+    Three places, in order, and the order matters:
+
+      1. **Beside the program** - where the bundle carries them and where a
+         development checkout keeps what `--setup-sensors` downloaded.
+      2. **The user directory** - where setup writes them when the program is
+         installed read-only, which is what an MSIX package is: its install
+         folder cannot be written to at run time.
+      3. **Inside the bundle** - the last resort, so a packaged build still finds
+         a module it shipped with.
+
+    Returns the first that exists, or the user-directory path so that setup has a
+    destination to write to.
     """
     import apppaths
-    beside = apppaths.app_path(os.path.join("pawnio-modules", name))
-    if os.path.exists(beside):
-        return beside
-    return apppaths.resource_path(os.path.join("pawnio-modules", name))
+    candidates = [apppaths.app_path(os.path.join("pawnio-modules", name)),
+                  apppaths.user_path(os.path.join("pawnio-modules", name)),
+                  apppaths.resource_path(os.path.join("pawnio-modules", name))]
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+    return candidates[1]
 
 
 def modules_directory() -> str:
-    """The writable place modules are installed to."""
+    """The writable place modules are installed to: the user's directory.
+
+    Never beside the program: that is read-only for an installed package, and
+    these are downloaded artifacts, per-user by nature.
+    """
     import apppaths
-    return apppaths.app_path("pawnio-modules")
+    return apppaths.user_path("pawnio-modules")
 
 
 def driver_installed() -> bool:

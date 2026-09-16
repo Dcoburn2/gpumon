@@ -973,6 +973,46 @@ Threads: **sampler** (cadence), **writer** (disk), **nvml-poller** and
 **pdh-poller** (slow GPU sources), plus the UI thread. Only the sampler touches
 the cadence; every front end renders from the same buffers and never blocks it.
 
+## Publishing to the Microsoft Store
+
+The Store signs packages itself, so this is the one route that needs no
+certificate at all — and it comes with two constraints that shape the build rather
+than decorate it.
+
+**The install folder is read-only.** An MSIX package lives in
+`C:\Program Files\WindowsApps\`, so nothing may be written beside the executable.
+`apppaths.state_path()` handles that: settings, logs and the session database go
+to the user's profile, and only a copy that already has a `config.json` beside it
+keeps writing there — which is what makes the zip portable. `test_storepackage.py`
+runs the packaged build from a scratch folder and asserts that nothing appears
+beside the executable.
+
+**A packaged app cannot install a kernel driver.** Elevation needs the
+`allowElevation` restricted capability, which Microsoft describes as unlikely to
+pass certification, and their own guidance is to keep the interface in user mode
+and put admin work in a separate component. gpumon is already built that way, so
+the packaged build:
+
+* works fully for GPU telemetry, CPU load, memory and per-core activity;
+* shows the CPU temperature when the machine already has the sensor helper — the
+  portable download sets it up once, and readings are published per user rather
+  than per copy of the program;
+* says so in the window instead of offering a prompt Windows would refuse.
+
+```powershell
+python make_store_package.py                 # build store/gpumon-<version>-x64.msix
+python make_store_package.py --layout-only   # just the package folder
+python make_store_package.py --sign          # + a self-signed cert, for local testing
+python store_capture.py                      # the 1366x768 screenshots the Store wants
+```
+
+`store/SUBMISSION.md` is the rest of it: what Partner Center asks for, the three
+identity values that must match the manifest exactly, a privacy policy draft, the
+listing text, and the certification notes that pre-empt the driver question.
+**Individual developer registration is free** — start at
+[storedeveloper.microsoft.com](https://storedeveloper.microsoft.com), because
+going through Partner Center directly gets the legacy paid flow.
+
 ## Signing
 
 **An unsigned executable cannot be made trusted by anything inside it.** A

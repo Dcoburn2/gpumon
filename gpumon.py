@@ -57,7 +57,7 @@ def _capture_output() -> str:
     if os.environ.get("GPUMON_DETACHED") != "1" \
             and sys.stdout is not None and sys.stderr is not None:
         return ""
-    path = apppaths.app_path(LAUNCH_LOG)
+    path = apppaths.state_path(LAUNCH_LOG)
     try:
         if os.path.exists(path) and os.path.getsize(path) > LOG_LIMIT:
             os.remove(path)
@@ -543,7 +543,7 @@ def _install_crash_logging(root) -> str:
     import time
     import traceback
 
-    path = apppaths.app_path("gpumon-error.log")
+    path = apppaths.state_path("gpumon-error.log")
 
     def record(kind: str, exc: BaseException) -> None:
         try:
@@ -851,7 +851,7 @@ def _setup_sensors(argv: list[str]) -> int:
     """
     import sensorsetup
 
-    log_path = apppaths.app_path("sensors-setup.log")
+    log_path = apppaths.state_path("sensors-setup.log")
     log = open(log_path, "w", encoding="utf-8", errors="replace")
 
     class Tee:

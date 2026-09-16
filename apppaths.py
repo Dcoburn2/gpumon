@@ -68,3 +68,68 @@ def user_dir() -> str:
 def user_path(name: str) -> str:
     """A path inside `user_dir()`."""
     return os.path.join(user_dir(), name)
+
+
+#: A file whose presence beside the executable means "keep my settings here".
+#: That is what a portable copy does, and it is how the packaged build is told
+#: apart from one: an MSIX install lives in `C:\Program Files\WindowsApps\`,
+#: which is read-only at run time, so state has to go to the user's profile.
+PORTABLE_MARKER = "config.json"
+
+
+def state_dir() -> str:
+    """Where writable state belongs, portable copy or installed package.
+
+    A copy that already keeps its settings beside itself keeps doing so - that is
+    what makes the zip portable, and moving somebody's config out from under them
+    would lose their theme and their alarms. Anything else, including a packaged
+    install, writes to the per-user directory.
+    """
+    if os.path.exists(app_path(PORTABLE_MARKER)):
+        return app_dir()
+    return user_dir()
+
+
+def state_path(name: str) -> str:
+    """A path for a file gpumon writes: settings, logs, published readings."""
+    return os.path.join(state_dir(), name)
+
+
+def is_packaged() -> bool:
+    """True when running from an MSIX package, which is how the Store ships it.
+
+    A packaged app has a package identity, and knowing that matters for one
+    behaviour only: it cannot install a kernel driver or register a scheduled
+    task, because elevation needs a restricted capability Microsoft will not
+    certify for an app that asks for it up front. So the packaged build says
+    where the sensor helper comes from rather than offering a button that cannot
+    work.
+    """
+    if os.name != "nt":
+        return False
+    import ctypes
+    try:
+        length = ctypes.c_uint32(0)
+        result = ctypes.windll.kernel32.GetCurrentPackageFullName(
+            ctypes.byref(length), None)
+    except (AttributeError, OSError):
+        return False
+    # APPMODEL_ERROR_NO_PACKAGE means unpackaged; anything else means it has an
+    # identity, including the "buffer too small" that a real package returns.
+    return result != 15700
+
+
+def packaged_sensor_message() -> str:
+    """What to say when the packaged build cannot set the CPU sensors up.
+
+    A Store build cannot install a kernel driver: elevation needs a restricted
+    capability Microsoft will not certify for an app that asks for it, and their
+    own guidance is to keep the interface unprivileged and put the administrative
+    work in a separate component. That is how gpumon is built - the sensor helper
+    is its own process - so the honest answer is where the helper comes from
+    rather than a button that cannot work.
+    """
+    return ("This packaged build cannot install the CPU sensor helper. Run "
+            "start-sensors.cmd from the portable download once and this app will "
+            "show the CPU temperature too - the readings are published per user, "
+            "not per copy of the program.")

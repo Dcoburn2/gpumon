@@ -24,6 +24,7 @@ from tkinter import messagebox, simpledialog
 from typing import Any, Sequence
 
 import alarms as A
+import apppaths
 import metrics as M
 import sampler as SP
 import store as S
@@ -1251,6 +1252,11 @@ class MonitorApp:
         """
         if self.manager.cpu_temp_source():
             self._sensors_ready(sensorsetup_describe())
+            return
+        if apppaths.is_packaged():
+            # A packaged app cannot install a kernel driver, so offering to try
+            # would be offering a prompt that Windows refuses.
+            self._set_sensor_status(apppaths.packaged_sensor_message(), ok=False)
             return
         self._set_sensor_status("starting the sensor helper...", ok=True)
         threading.Thread(target=self._start_sensors_worker, daemon=True).start()

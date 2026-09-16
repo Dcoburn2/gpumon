@@ -34,7 +34,7 @@ TOOLS_DIR = os.path.join(HERE, "tools")
 #: packaged release carries them and a source checkout can fetch what it lacks.
 import apppaths  # noqa: E402
 
-MODULES_DIR = apppaths.app_path("pawnio-modules")
+MODULES_DIR = apppaths.user_path("pawnio-modules")
 
 #: The vendor's own installer, not a copy: PawnIO is GPL-2.0, so redistributing
 #: it inside gpumon would put its licence on this project's distribution. For
@@ -343,7 +343,7 @@ def run_setup_here() -> tuple[bool, str]:
 def setup_marker() -> str:
     """Where the elevated setup records how it went."""
     import apppaths
-    return apppaths.app_path("sensors-setup.exit")
+    return apppaths.state_path("sensors-setup.exit")
 
 
 def begin_setup() -> None:

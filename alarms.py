@@ -278,7 +278,7 @@ def config_path() -> str:
     if override:
         return override
     import apppaths
-    return apppaths.app_path("config.json")
+    return apppaths.state_path("config.json")
 
 
 def load_config(path: str | None = None) -> dict[str, Any]:
