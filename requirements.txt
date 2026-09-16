@@ -1,0 +1,14 @@
+# gpumon runtime requirements.
+#
+# The live monitor, logging, alarms and the summary window need only psutil.
+# Charts are drawn on Tk canvases and emitted as inline SVG, so no plotting
+# library is required, and the GUI uses tkinter from the standard library.
+
+# CPU utilisation, clock, RAM and pagefile. Required.
+psutil>=5.9
+
+# Optional: only needed to read CPU package temperature and AMD GPU
+# temperatures from LibreHardwareMonitor's WMI provider. LibreHardwareMonitor
+# itself must be running as administrator with Options -> WMI Provider enabled.
+# Install with:  pip install wmi
+# wmi>=1.5.1

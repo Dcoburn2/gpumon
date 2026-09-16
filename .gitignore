@@ -1,0 +1,58 @@
+# Build output and packaging
+build/
+dist/
+release/
+release-onefile/
+*.spec.bak
+
+# Run-time state: settings, sensor readings, logs, databases. None of this
+# belongs in a repository, least of all somebody's own machine configuration.
+config.json
+config-backup.json
+msr-sensors.json
+msr-heartbeat
+msr*.flag
+gpumon-error.log
+gpumon-launch.log
+sensors-setup.log
+sensors-setup.exit
+*.db
+*.db-wal
+*.db-shm
+*.log
+vram_phase.json
+
+# Scratch files the tests leave if one is interrupted
+diag*.json
+diag*.db
+diag*.db-wal
+diag*.db-shm
+diag*/
+acceptance_report.html
+_*.py
+_*.png
+
+# Third-party tools downloaded at setup time, never committed
+tools/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Editors and OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# PawnIO's signed modules: GPL-2.0 third-party downloads, fetched by
+# --setup-sensors. Bundling or committing them would put that licence on this
+# project's distribution.
+pawnio-modules/
+
+# Download artifacts, built by make_release.py
+*.zip
+release-onefile/

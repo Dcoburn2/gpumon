@@ -1,0 +1,36 @@
+{
+  "_comment": "gpumon configuration. Copy to config.json and edit; gpumon rewrites config.json when you save alarm settings, preserving only values you changed from the built-in defaults.",
+  "sample_hz": 1.0,
+  "per_core": false,
+  "db_path": "",
+  "alarms": {
+    "gpu0_temp": {
+      "warning": 78.0,
+      "critical": 85.0,
+      "hysteresis": 2.0,
+      "min_duration": 1.0,
+      "enabled": true
+    },
+    "gpu0_hotspot": {
+      "warning": 95.0,
+      "critical": 105.0,
+      "hysteresis": 2.0,
+      "min_duration": 1.0,
+      "enabled": true
+    },
+    "cpu_temp": {
+      "warning": 85.0,
+      "critical": 95.0,
+      "hysteresis": 2.0,
+      "min_duration": 2.0,
+      "enabled": true
+    },
+    "ram_percent": {
+      "warning": 90.0,
+      "critical": 97.0,
+      "hysteresis": 1.0,
+      "min_duration": 0.0,
+      "enabled": true
+    }
+  }
+}
