@@ -1,0 +1,99 @@
+name: release
+
+# Build the Windows artifacts on a tag, sign them if a signing identity is
+# configured, and attach them to the release.
+#
+# Signing belongs here rather than on somebody's laptop: a certificate's private
+# key must live in a hardware module or a cloud service, and continuous
+# integration is where those belong. Nothing in this workflow is required for a
+# build to succeed - unsigned artifacts are still released, with a note.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller psutil wmi
+
+      - name: Run the test suite
+        # The suite is written to pass on a machine with no sensors, no driver
+        # and no elevation: anything that needs those reports why instead.
+        run: |
+          $failed = 0
+          Get-ChildItem test_*.py | ForEach-Object {
+            Write-Host "== $($_.Name)"
+            python $_.FullName
+            if ($LASTEXITCODE -ne 0) { $failed = 1 }
+          }
+          python gpumon.py --selftest
+          if ($LASTEXITCODE -ne 0) { $failed = 1 }
+          exit $failed
+        shell: pwsh
+
+      - name: Build the artifacts
+        run: python make_release.py --all
+        shell: pwsh
+
+      - name: Sign the artifacts
+        # Azure Artifact Signing (formerly Trusted Signing) is the option
+        # Microsoft recommends for distribution outside the Store: about
+        # $9.99/month, no hardware token, and it integrates with a pipeline.
+        # The secrets below hold the dlib path and its metadata; without them
+        # this step is skipped and the build stays unsigned.
+        if: ${{ secrets.AZURE_SIGNING_METADATA != '' }}
+        env:
+          GPUMON_SIGN_ARGS: >-
+            /dlib ${{ secrets.AZURE_SIGNING_DLIB }}
+            /dmdf ${{ secrets.AZURE_SIGNING_METADATA }}
+        run: python make_release.py --sign
+        shell: pwsh
+
+      - name: Note that the build is unsigned
+        if: ${{ secrets.AZURE_SIGNING_METADATA == '' }}
+        run: |
+          Write-Host "::warning::No signing identity configured, so these"
+          Write-Host "::warning::artifacts are unsigned and Windows will warn"
+          Write-Host "::warning::on first run. See the Signing section of README.md."
+        shell: pwsh
+
+      - name: Upload the artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpumon-windows-x64
+          path: |
+            release/**
+            release-onefile/**
+            gpumon-*-windows-x64.zip
+            release/SHA256SUMS.txt
+
+      - name: Attach them to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            gpumon-*-windows-x64.zip
+            release/SHA256SUMS.txt
+          body: |
+            Windows 10/11, 64-bit. No installer: unzip and run `gpumon.exe`.
+
+            `SHA256SUMS.txt` holds the checksums, so a download can be verified.
+
+            The build is not code-signed, so Windows will show a
+            "Windows protected your PC" notice the first time — *More info →
+            Run anyway*.

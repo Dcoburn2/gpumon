@@ -973,11 +973,79 @@ Threads: **sampler** (cadence), **writer** (disk), **nvml-poller** and
 **pdh-poller** (slow GPU sources), plus the UI thread. Only the sampler touches
 the cadence; every front end renders from the same buffers and never blocks it.
 
+## Signing
+
+**An unsigned executable cannot be made trusted by anything inside it.** A
+signature says who published a file, and Windows decides how much to trust that
+publisher from a certificate chaining to a CA in Microsoft's Trusted Root
+Program. Without one, every downloader sees *"Windows protected your PC"* and has
+to click through it. A self-signed certificate is **worse than none** for public
+distribution: Windows treats it as an untrusted publisher and blocks the file
+outright for anyone who has not installed the certificate by hand.
+
+So this is a thing to buy or earn, not a thing to code around. The options, as
+Microsoft currently describes them:
+
+| Option | Cost | Notes |
+|---|---|---|
+| **[SignPath Foundation](https://signpath.org)** | free | Code signing for qualifying **open-source** projects through a managed pipeline. The obvious first stop for this repository. |
+| **Azure Artifact Signing** (formerly Trusted Signing) | ~$9.99/month | Microsoft's recommendation for non-Store distribution. Integrates with a pipeline, **no hardware token**. Organizations in the USA, Canada, the EU and the UK; individual developers only in the USA and Canada. |
+| **OV certificate** (DigiCert, Sectigo, …) | $150–300/year | Works anywhere. Since June 2023 the private key must live on a hardware token or HSM, which most CAs supply. |
+| **EV certificate** | $400+/year | **No longer worth it for SmartScreen**: the instant-trust bypass was removed in 2024, so an EV-signed file now builds reputation exactly like an OV one. |
+| **Microsoft Store (MSIX)** | free | Microsoft re-signs Store packages, so users never see a warning — a different distribution channel rather than a fix for a standalone exe. |
+| **Self-signed** | free | Development and managed enterprise machines only. |
+
+**Signing is not the same as being trusted.** A newly signed file can still warn
+until its publisher accumulates reputation, and signing every release with the
+same identity is what makes that reputation carry forward. Microsoft's
+[code signing options](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options)
+and [SmartScreen reputation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation)
+pages are the source for the table above.
+
+### What this repository does about it
+
+`signing.py` makes signing a matter of configuration rather than a rewrite, so the
+day there is a certificate nothing here has to change:
+
+```powershell
+$env:GPUMON_SIGN_CERT = "ABCDEF…"      # a thumbprint in the Windows store
+python make_release.py --all           # signs what it built, then checksums it
+python make_release.py --sign          # or require signing: fail if it cannot
+```
+
+| Variable | For |
+|---|---|
+| `GPUMON_SIGNTOOL` | where `signtool.exe` is, if it is not on `PATH` |
+| `GPUMON_SIGN_CERT` | a certificate thumbprint |
+| `GPUMON_SIGN_PFX` / `GPUMON_SIGN_PFX_PASSWORD` | a `.pfx` file and its password |
+| `GPUMON_SIGN_ARGS` | a signing service's own arguments, e.g. Azure's `/dlib … /dmdf …` |
+| `GPUMON_SIGN_TIMESTAMP` | the timestamp server (defaults to DigiCert's) |
+
+Every file is timestamped (RFC 3161), without which every signature would stop
+being valid the day the certificate expires — including for files downloaded years
+earlier.
+
+Without a configured identity a build is **not** a failure: the artifacts come out
+unsigned with a line saying so, because that is the honest state of a laptop
+build. `.github/workflows/release.yml` is where it stops being
+honest-by-accident: it builds on a version tag, runs the suite, signs if Azure
+Artifact Signing secrets are present, warns loudly if they are not, and attaches
+the artifacts and their `SHA256SUMS.txt` to the release. Keys belong in a
+pipeline's secrets or an HSM, never in the repository — `test_workflow.py`
+asserts none are committed.
+
+**Realistically, for this project:** apply to SignPath Foundation first — it is
+free and exists precisely for open-source projects — and fall back to Azure
+Artifact Signing at ~$10/month if that application does not fit. Until then,
+publish `SHA256SUMS.txt` with the download: it does not remove the warning, but
+it lets anyone verify that what they got is what was built.
+
 ## Requirements
 
 * Windows 10/11, Python 3.10+ (tested on 3.14.7)
 * `pip install psutil` — required for CPU/RAM
-* `pip install wmi` — optional, only for CPU temperature via LibreHardwareMonitor
+* `pip install wmi` — optional, only for the LibreHardwareMonitor fallback
+  (gpumon reads the processor's registers itself, through the PawnIO driver)
 * No plotting library needed; all charts are drawn on Tk canvases and emitted as
   inline SVG.
 * GPU sensors need nothing extra: NVML ships with the NVIDIA driver, ADL with the

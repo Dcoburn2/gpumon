@@ -90,6 +90,65 @@ def build_single_file() -> bool:
     return os.path.exists(os.path.join(HERE, "dist", "gpumon-portable.exe"))
 
 
+def sign_artifacts(require: bool = False) -> int:
+    """Sign what was built, before anything is checksummed or zipped.
+
+    Signing is configuration, not code: with a signing identity in the
+    environment the artifacts come out signed and timestamped, and without one
+    they come out unsigned with a line saying so. `require` turns the second case
+    into a failure, which is what a release pipeline wants.
+    """
+    import signing
+
+    artifacts = [path for path in (os.path.join(RELEASE, "gpumon.exe"),
+                                   os.path.join(SINGLE, "gpumon.exe"))
+                 if os.path.exists(path)]
+    print("\nsigning...")
+    signed, message = signing.sign(artifacts)
+    print(f"  {'+ ' if signed else '! '}{message}")
+    if not signed:
+        if require:
+            print("  --sign was asked for, so this build stops here.")
+            return 1
+        print("  unsigned: no certificate is configured, so Windows will warn on")
+        print("  first run. See the Signing section of README.md.")
+    return 0
+
+
+def write_checksums() -> int:
+    """One checksum file beside each artifact, then the zip's.
+
+    Written after signing, because signing changes the bytes. Each file names
+    only what sits beside it: an earlier version listed both executables as
+    "gpumon.exe" in one file, which told a reader nothing about which was which.
+    """
+    import signing
+
+    for folder in (RELEASE, SINGLE):
+        executable = os.path.join(folder, "gpumon.exe")
+        if not os.path.exists(executable):
+            continue
+        target = os.path.join(folder, "SHA256SUMS.txt")
+        with open(target, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(signing.checksums([executable]))
+        print(f"  wrote {os.path.relpath(target, HERE)}")
+    return 0
+
+
+def checksum_zip() -> int:
+    """A `.sha256` beside the zip, in the form `sha256sum -c` reads."""
+    import signing
+
+    archive = os.path.join(HERE, "gpumon-1.0.0-windows-x64.zip")
+    if not os.path.exists(archive):
+        return 0
+    target = archive + ".sha256"
+    with open(target, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(signing.checksums([archive]))
+    print(f"  wrote {os.path.basename(target)}")
+    return 0
+
+
 def assemble_single_file() -> int:
     """Put the single-file build in its own folder, with its own readme."""
     target = SINGLE
@@ -317,7 +376,7 @@ def assemble() -> int:
     # Anything that is not part of a release is a bug in this script, so say so
     # rather than shipping it.
     allowed_files = {"gpumon.exe", "README.md", RELEASE_SCRIPT, "gpumon.ico",
-                     "gpumon.png"}
+                     "gpumon.png", "SHA256SUMS.txt"}
     unexpected = [name for name in os.listdir(RELEASE)
                   if name not in allowed_files and name != "_internal"
                   and not os.path.isdir(os.path.join(RELEASE, name))]
@@ -347,10 +406,18 @@ if __name__ == "__main__":
         if not build_executable():
             raise SystemExit(1)
     code = assemble()
-    if code == 0:
-        code = make_zip()
-    if wanted_single:
+    if wanted_single and code == 0:
         if not build_single_file():
             raise SystemExit(1)
         code = assemble_single_file() or code
+    # Sign first, then checksum, then zip: signing changes the bytes, and the
+    # zip should contain the checksums it was built with.
+    if code == 0:
+        code = sign_artifacts(require="--sign" in sys.argv)
+    if code == 0:
+        code = write_checksums()
+    if code == 0:
+        code = make_zip()
+    if code == 0:
+        code = checksum_zip()
     raise SystemExit(code)
