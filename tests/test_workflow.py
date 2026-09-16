@@ -82,7 +82,7 @@ check("it attaches files to a release",
       any("attach" in name.lower() for name in names))
 
 print("\n[4] signing is configured, not required")
-check("the signing step is conditional", "if: ${{ secrets." in text,
+check("the signing step is conditional", "if: env." in text,
       "a missing certificate must not fail the build")
 check("an unsigned build is announced", "::warning::" in text)
 check("and the release body says so",
@@ -96,6 +96,24 @@ check("no certificate or password is committed",
       "keys belong in secrets, never in the workflow file")
 check("the signing identity comes from secrets",
       "secrets.AZURE_SIGNING" in text)
+
+print("\n[5b] and it is a workflow GitHub will actually accept")
+# A class of error that only appears on the server: GitHub rejects certain
+# contexts inside an `if:` condition. A workflow using `secrets` there is invalid
+# and fails with *no jobs at all*, which reads like mysterious infrastructure
+# trouble rather than a mistake in the file. That cost a failed run on every push
+# until it was found, including the first tag.
+conditions = [line.strip() for line in text.splitlines()
+              if line.strip().startswith("if:")]
+print(f"    {len(conditions)} condition(s):")
+for condition in conditions:
+    print(f"      {condition}")
+    check(f"does not use the secrets context: {condition[:46]}",
+          "secrets." not in condition,
+          "secrets cannot be used in if: - pass it through env instead")
+check("the signing secret reaches a condition through env",
+      "SIGNING_METADATA: ${{ secrets." in text,
+      "env is allowed in if:, and only a job or step env can carry it")
 
 print("\n[6] and the local build says the same thing")
 import signing  # noqa: E402

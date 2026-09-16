@@ -19,6 +19,12 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      # Kept in an environment variable because `secrets` cannot appear in an
+      # `if:` condition: GitHub rejects such a workflow as invalid, and it fails
+      # before any job starts, which is what happened to the first version of
+      # this file. The `env` context is allowed there.
+      SIGNING_METADATA: ${{ secrets.AZURE_SIGNING_METADATA }}
     steps:
       - uses: actions/checkout@v4
 
@@ -60,7 +66,7 @@ jobs:
         # $9.99/month, no hardware token, and it integrates with a pipeline.
         # The secrets below hold the dlib path and its metadata; without them
         # this step is skipped and the build stays unsigned.
-        if: ${{ secrets.AZURE_SIGNING_METADATA != '' }}
+        if: env.SIGNING_METADATA != ''
         env:
           GPUMON_SIGN_ARGS: >-
             /dlib ${{ secrets.AZURE_SIGNING_DLIB }}
@@ -69,7 +75,7 @@ jobs:
         shell: pwsh
 
       - name: Note that the build is unsigned
-        if: ${{ secrets.AZURE_SIGNING_METADATA == '' }}
+        if: env.SIGNING_METADATA == ''
         run: |
           Write-Host "::warning::No signing identity configured, so these"
           Write-Host "::warning::artifacts are unsigned and Windows will warn"
