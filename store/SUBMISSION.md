@@ -85,7 +85,7 @@ removable. It is not part of what the Store distributes.
 > helper is already present, and never opens the driver itself.
 
 If a reviewer prefers the Store package to contain no sensor-setup code at all,
-that is already how it is built: `python make_store_package.py` **disables the
+that is already how it is built: `python scripts/make_store_package.py` **disables the
 setup path in the binary** by default. `storemode.IS_STORE_BUILD` becomes True for
 that build, the command line refuses `--setup-sensors`, and the layout records it
 in `STORE-BUILD.txt`. `test_storedrivers.py` runs the packaged executable with
@@ -108,7 +108,7 @@ local package that keeps the full feature set.
 ### The values the manifest needs
 
 Partner Center assigns three of these when you reserve the name. **The manifest
-must match them exactly or the package is rejected.** `make_store_package.py`
+must match them exactly or the package is rejected.** `scripts/make_store_package.py`
 holds them at the top of the file:
 
 ```python
@@ -118,7 +118,7 @@ VERSION = "1.0.0.0"                 # -> Package/Identity/Version (x.y.z.0)
 ```
 
 Copy the three from Partner Center → *Product identity* into those constants,
-rebuild with `python make_store_package.py`, and upload
+rebuild with `python scripts/make_store_package.py`, and upload
 `store/gpumon-<version>-x64.msix`. It does **not** need signing first: the Store
 re-signs it after certification.
 
@@ -202,7 +202,7 @@ Paste this into *Notes for certification* — it pre-empts the questions:
 - The Store signs each package, so there is nothing to buy and no certificate to
   renew. Keep the version in the manifest increasing with each submission;
   Partner Center rejects a package whose version it has already seen.
-- `make_store_package.py` regenerates the package from the same source tree as
+- `scripts/make_store_package.py` regenerates the package from the same source tree as
   the zip release, so the two never drift.
 - The portable download stays available for anyone who wants the CPU temperature
   setup, or no Store at all. Both read the same sensor helper and write the same

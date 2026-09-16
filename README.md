@@ -34,7 +34,7 @@ summary opens automatically.
 ### Building and shipping
 
 ```powershell
-python make_release.py --all      # every artifact, from one source tree
+python scripts/make_release.py --all      # every artifact, from one source tree
 ```
 
 | Artifact | Size | Start-up | For |
@@ -50,7 +50,7 @@ assuming: the first attempt at that comparison watched the process it launched,
 found no window and reported sixty seconds, because the one-file bootloader runs
 the real program as a child. It was the measurement that was wrong.
 
-**What a release never contains.** `make_release.py` refuses to leave tests or
+**What a release never contains.** `scripts/make_release.py` refuses to leave tests or
 run-time files in the folder — a `config.json` from the build machine would hand
 a new user somebody else's settings, and would make the first-run shortcut
 question look already answered. It also carries no third-party binaries: PawnIO's
@@ -337,33 +337,48 @@ Sessions live in `%USERPROFILE%\Documents\gpumon\sessions.db` (SQLite).
 ### Installing it as an application
 
 ```powershell
-build_exe.cmd            # -> dist\gpumon\gpumon.exe  (~30 MB, icon baked in)
-make_shortcut.cmd        # a desktop shortcut to it
-make_shortcut.cmd start  # ...or one in the Start menu
+python scripts/make_release.py --build     # -> release\gpumon.exe, ready to run
+python scripts/make_release.py --all       # + the zip and the single-file build
 ```
 
-`build_exe.cmd` installs PyInstaller (build-time only), regenerates the icon and
-bundles the interpreter with the app, so `gpumon.exe` runs on a machine with no
-Python at all. It is a one-folder build on purpose: one-file mode unpacks ~20 MB
-into a temporary directory on every launch and costs seconds each time.
+`scripts/make_release.py` installs nothing: PyInstaller must already be present
+(`pip install pyinstaller`). It bundles the interpreter with the program, so
+`gpumon.exe` runs on a machine with no Python at all. It is a one-folder build on
+purpose — one-file mode unpacks ~20 MB into a temporary directory on every launch
+and costs about 0.4 s each time, which is measured rather than guessed.
 
-The shortcut is an ordinary `.lnk` carrying the application icon — delete it and
-nothing else changes. `gpumon.cmd` still works and remains the way to run the
-terminal and browser modes, which need a console to talk to you.
+The program puts the desktop shortcut on offer itself on first run, so there is no
+script for that any more. `gpumon.cmd` remains the way to run the terminal and
+browser modes, which need a console to talk to you.
 
-Paths that belong to the app (the settings file, `gpumon-launch.log`, the
-downloaded tools, the saved VRAM baseline, the icon) resolve through
-`apppaths.py`: next to the executable when frozen, next to the source when not,
-and inside the bundle for read-only resources. A frozen build unpacks into a
-temporary directory, so anything derived from `__file__` would be written
-somewhere that is deleted on exit.
+Paths that belong to the app (the settings file, the logs, the sensor readings)
+resolve through `apppaths.py`: beside the executable for a portable copy — the
+rule is the presence of a `config.json` next to it — and in the user's profile
+otherwise, which is what an installed package needs since its own folder is
+read-only. A frozen build unpacks into a temporary directory, so anything derived
+from `__file__` would be written somewhere that is deleted on exit.
+
+### Repository layout
+
+```
+gpumon.py, metrics.py, ...      the program: flat modules, imported by name
+ui/                             the desktop interface (tkinter)
+platforms/                      one module per OS, dispatched from __init__.py
+tests/                          36 test files, each runnable on its own
+scripts/                        packaging, signing, icons, Store screenshots
+store/                          the Microsoft Store submission material
+```
+
+The program's modules stay at the top level on purpose: they are imported flat
+(`import metrics`), which keeps the frozen build and every entry point simple.
+What sits in folders is everything a *user* never runs.
 
 ### The icon
 
 ![gpumon](gpumon.png)
 
 A horned monster eating a graphics card: black board, two fans, gold PCIe edge
-fingers, held across its mouth with two fangs in it. Drawn by `make_icon.py` with
+fingers, held across its mouth with two fangs in it. Drawn by `scripts/make_icon.py` with
 nothing but the standard library — a coverage-sampling rasteriser, a PNG encoder
 on top of `zlib`, and a hand-written ICO container (PNG frames at 128 px and
 above, BMP frames below, which is what Explorer and the taskbar expect).
@@ -436,9 +451,9 @@ On Linux, AMD telemetry comes from sysfs — `gpu_busy_percent`,
 needs no driver, no elevation and no `rocm-smi`. `rocm-smi` is used only if sysfs
 cannot supply a value.
 
-The desktop window icon is generated from source by `make_icon.py` (stdlib only —
+The desktop window icon is generated from source by `scripts/make_icon.py` (stdlib only —
 a small anti-aliased rasteriser, a PNG encoder and the ICO container). Re-run it
-after editing the artwork: `python make_icon.py`.
+after editing the artwork: `python scripts/make_icon.py`.
 
 ---
 
@@ -1004,10 +1019,10 @@ the packaged build:
 * says so in the window instead of offering a prompt Windows would refuse.
 
 ```powershell
-python make_store_package.py                 # build store/gpumon-<version>-x64.msix
-python make_store_package.py --layout-only   # just the package folder
-python make_store_package.py --sign          # + a self-signed cert, for local testing
-python store_capture.py                      # the 1366x768 screenshots the Store wants
+python scripts/make_store_package.py                 # build store/gpumon-<version>-x64.msix
+python scripts/make_store_package.py --layout-only   # just the package folder
+python scripts/make_store_package.py --sign          # + a self-signed cert, for local testing
+python scripts/store_capture.py                      # the 1366x768 screenshots the Store wants
 ```
 
 `store/SUBMISSION.md` is the rest of it: what Partner Center asks for, the three
@@ -1036,7 +1051,7 @@ gpumon installs nothing and ships no driver.
 **The CPU package temperature needs a kernel driver, and the Store package does
 not use one.** That register is not exposed to user mode, which is why every
 monitor that reports it installs a driver. In the packaged build the sensor-setup
-path is **disabled at build time** — `make_store_package.py` sets
+path is **disabled at build time** — `scripts/make_store_package.py` sets
 `storemode.IS_STORE_BUILD`, and the command line then refuses `--setup-sensors`
 instead of raising a prompt Windows would refuse. The packaged build reads a
 per-user data file if a helper is already installed on that machine; it never
@@ -1083,8 +1098,8 @@ day there is a certificate nothing here has to change:
 
 ```powershell
 $env:GPUMON_SIGN_CERT = "ABCDEF…"      # a thumbprint in the Windows store
-python make_release.py --all           # signs what it built, then checksums it
-python make_release.py --sign          # or require signing: fail if it cannot
+python scripts/make_release.py --all           # signs what it built, then checksums it
+python scripts/make_release.py --sign          # or require signing: fail if it cannot
 ```
 
 | Variable | For |

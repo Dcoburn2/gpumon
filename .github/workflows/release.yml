@@ -36,7 +36,7 @@ jobs:
         # and no elevation: anything that needs those reports why instead.
         run: |
           $failed = 0
-          Get-ChildItem test_*.py | ForEach-Object {
+          Get-ChildItem tests/test_*.py | ForEach-Object {
             Write-Host "== $($_.Name)"
             python $_.FullName
             if ($LASTEXITCODE -ne 0) { $failed = 1 }
@@ -47,7 +47,7 @@ jobs:
         shell: pwsh
 
       - name: Build the artifacts
-        run: python make_release.py --all
+        run: python scripts/make_release.py --all
         shell: pwsh
 
       - name: Sign the artifacts
@@ -61,7 +61,7 @@ jobs:
           GPUMON_SIGN_ARGS: >-
             /dlib ${{ secrets.AZURE_SIGNING_DLIB }}
             /dmdf ${{ secrets.AZURE_SIGNING_METADATA }}
-        run: python make_release.py --sign
+        run: python scripts/make_release.py --sign
         shell: pwsh
 
       - name: Note that the build is unsigned
