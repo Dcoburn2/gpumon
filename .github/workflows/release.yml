@@ -19,6 +19,11 @@ permissions:
 jobs:
   windows:
     runs-on: windows-latest
+    # The suite takes about 6 minutes on a fast machine with three GPUs; a
+    # two-core runner with none is several times slower. Bounded so a run that
+    # goes wrong ends as a failure rather than sitting there looking stuck - the
+    # first attempt was cancelled by hand after half an hour.
+    timeout-minutes: 45
     env:
       # Kept in an environment variable because `secrets` cannot appear in an
       # `if:` condition: GitHub rejects such a workflow as invalid, and it fails
@@ -46,14 +51,32 @@ jobs:
         shell: pwsh
 
       - name: Run the test suite
-        # The suite is written to pass on a machine with no sensors, no driver
-        # and no elevation: anything that needs those reports why instead.
+        # Each test runs with its own bound, so a test that blocks names itself
+        # instead of hanging the job. The slowest locally is 63 seconds.
         run: |
           $failed = 0
           Get-ChildItem tests/test_*.py | ForEach-Object {
-            Write-Host "== $($_.Name)"
-            python $_.FullName
-            if ($LASTEXITCODE -ne 0) { $failed = 1 }
+            $name = $_.Name
+            $job = Start-Job -ScriptBlock {
+              param($path)
+              Set-Location $using:pwd
+              & python $path 2>&1
+              "EXIT=$LASTEXITCODE"
+            } -ArgumentList $_.FullName
+            if (Wait-Job $job -Timeout 300) {
+              $out = Receive-Job $job
+              $code = ($out | Select-String '^EXIT=' | Select-Object -Last 1)
+              $text = ($out | Where-Object { $_ -notmatch '^EXIT=' }) -join "`n"
+              Write-Host "== $name"
+              Write-Host $text
+              if ($code -notmatch 'EXIT=0') { $failed = 1; Write-Host "::error::$name failed" }
+            } else {
+              Stop-Job $job
+              Write-Host "== $name"
+              Write-Host "::error::$name did not finish within 300 seconds"
+              $failed = 1
+            }
+            Remove-Job $job -Force
           }
           python gpumon.py --selftest
           if ($LASTEXITCODE -ne 0) { $failed = 1 }
