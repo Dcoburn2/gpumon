@@ -56,3 +56,4 @@ pawnio-modules/
 # Download artifacts, built by make_release.py
 *.zip
 release-onefile/
+*.zip.sha256
