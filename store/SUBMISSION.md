@@ -65,15 +65,25 @@ re-signs it after certification.
 
 ### Privacy policy
 
-Required even though the app collects nothing. A short honest one is enough, and
-the repository is a fine place for it (`PRIVACY.md`), since the Store needs a URL:
+**It exists: `PRIVACY.md` in the repository root.** Partner Center wants a URL,
+not an upload, so it needs to be reachable on the web before you submit. Push the
+repository first, then use one of:
 
-> gpumon reads hardware sensors on your own machine — GPU and CPU utilisation,
-> temperatures, clocks, power, memory — and stores session recordings in a SQLite
-> database in your Documents folder. It sends nothing anywhere and has no
-> telemetry, no accounts and no network access of its own. The one exception is
-> the portable build's optional sensor setup, which downloads the PawnIO driver
-> and its modules from their own project releases when you ask it to.
+```
+https://github.com/<your-account>/gpumon/blob/main/PRIVACY.md     (the page)
+https://raw.githubusercontent.com/<your-account>/gpumon/main/PRIVACY.md
+```
+
+A GitHub URL is accepted — it does not need to be a domain you own. If you would
+rather have a plain page, GitHub Pages serves the repository at
+`https://<your-account>.github.io/gpumon/PRIVACY.md` once enabled in Settings →
+Pages.
+
+The policy says the app collects nothing, which is true and checkable: the only
+outbound requests in the whole program are the two GitHub downloads in the
+portable build's optional sensor setup, plus its own loopback web interface.
+`test_privacy.py` asserts both claims against the source, so the policy cannot
+drift away from the code.
 
 ### Screenshots
 
