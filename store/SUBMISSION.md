@@ -103,7 +103,40 @@ local package that keeps the full feature set.
 | Age rating | IARC questionnaire — no violence, no user-generated content; expect 3+ / everyone |
 | Privacy policy | **Required.** See below. |
 | Support contact | Your repository's issues URL |
-| System requirements | Windows 10 version 1809 (17763) or later, x64; a GPU from NVIDIA, AMD or Intel for the GPU half |
+| System requirements | See the measured table below |
+| OS and architecture | Windows 10 version 1809 (build 17763) or later, **x64 only** — what the package manifest declares |
+
+### System requirements, as measured
+
+The Store turns these into the listing's promises, so they were measured rather
+than estimated. Every number comes from the running program on the machine this
+was built on (Windows 11, i9-7900X, three GPUs).
+
+| Feature | Minimum | Recommended | Why |
+|---|---|---|---|
+| Touch screen | ☐ | ☐ | No touch API is used. It works on a touchscreen but never asks for one. |
+| Keyboard | **☑** | **☑** | Shortcuts are a core part of it (`L`, `M`, `S`, `A`, `G`, `T`, `C`, `P`, `Q`), and the terminal view is keyboard-only. |
+| Mouse | **☑** | **☑** | Dragging a graph to pan through history is the main way to explore it; the wheel is the other. |
+| Camera | ☐ | ☐ | Not used. |
+| NFC HCE / Proximity | ☐ | ☐ | Not used. |
+| Bluetooth LE | ☐ | ☐ | Not used. |
+| Telephony | ☐ | ☐ | Not used. |
+| Microphone | ☐ | ☐ | Not used. |
+| Memory | **2 GB** | **8 GB** | The program and its helper use about **116 MB** together (measured). 2 GB matches Windows' own 64-bit floor; 8 GB reflects that this is usually run *alongside* the workload being measured. |
+| DirectX | Not specified | Not specified | No 3D API is used — the window is drawn with GDI through tkinter. |
+| Dedicated GPU memory | Not specified | 1 GB | It runs without a discrete GPU and still reports CPU, memory and counters. A discrete GPU is what it is *for*, though. |
+| Processor | `x64 processor (Intel or AMD)` | `Intel Core i5 / AMD Ryzen 5 or newer` | x64 only: there is no ARM64 build. CPU temperature is read on Intel, and on AMD through the same driver path. |
+| Graphics | `Any Windows GPU with its vendor driver installed` | `Discrete NVIDIA or AMD GPU` | NVIDIA and AMD give the full set — temperature, hotspot, VRAM, clocks, power. Other GPUs fall back to Windows performance counters. |
+
+Two corrections to the form as it was filled in: **Mouse belongs in Minimum**, not
+only in Recommended, because panning through history is a drag. **Keyboard is
+right as it is.**
+
+Not asked for, but worth knowing: a recording uses **about 20 MB per hour** at the
+default 1 Hz with per-core temperatures on (53–76 values per tick, about 111 bytes
+each, measured from the session database). The recordings are the user's own files
+in their Documents folder.
+
 
 ### The values the manifest needs
 
