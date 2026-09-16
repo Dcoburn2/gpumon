@@ -1,0 +1,28 @@
+# Line endings, so a Windows checkout and a Linux checkout agree.
+#
+# Without this, Git's autocrlf rewrites the line endings of every text file on
+# checkout, and a contributor on Linux sees their whole file as changed. The
+# source is stored with LF; Windows keeps CRLF only where the file is meant to be
+# run on Windows.
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.txt   text eol=lf
+*.spec  text eol=lf
+
+# Batch files must keep CRLF: a .cmd with LF endings misbehaves in cmd.exe.
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# Binary files, which must never be line-ending converted.
+*.png   binary
+*.ico   binary
+*.exe   binary
+*.msix  binary
+*.zip   binary
+*.bin   binary
+*.db    binary
