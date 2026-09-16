@@ -195,6 +195,13 @@ def build_layout(no_sensor_setup: bool = False) -> bool:
         if os.path.exists(source):
             shutil.copy2(source, os.path.join(LAYOUT, name))
 
+    # The licence goes in the package as well as the zip: MIT requires its notice
+    # to travel with copies of the program.
+    licence = os.path.join(HERE, "LICENSE")
+    if os.path.exists(licence):
+        shutil.copy2(licence, os.path.join(LAYOUT, "LICENSE"))
+        print("  LICENSE")
+
     # The package carries no third-party binaries, and no run-time state: the
     # install folder is read-only, so a config.json in here would be a bug.
     for unwanted in ("config.json", "msr-sensors.json", "msr-heartbeat",

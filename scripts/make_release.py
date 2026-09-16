@@ -170,6 +170,12 @@ def assemble_single_file() -> int:
     os.makedirs(target)
     shutil.copy2(source, os.path.join(target, "gpumon.exe"))
     write_release_readme(target, single_file=True)
+    # The licence travels with the program. MIT requires its notice to be included
+    # in copies of the software, and somebody who downloads a zip has no other way
+    # to see it.
+    licence = os.path.join(HERE, "LICENSE")
+    if os.path.exists(licence):
+        shutil.copy2(licence, os.path.join(target, "LICENSE"))
     icon = os.path.join(HERE, "gpumon.ico")
     if os.path.exists(icon):
         shutil.copy2(icon, os.path.join(target, "gpumon.ico"))
@@ -333,6 +339,12 @@ traceback.
 Delete this file or folder. If you set up the CPU sensors, also remove PawnIO from
 *Add or remove programs* and the two `gpumon-sensors*` tasks from *Task
 Scheduler*.
+
+## Licence
+
+gpumon is free software under the MIT licence — see `LICENSE` beside the program.
+You may use it, change it and pass it on. It collects nothing about you: see the
+privacy policy at https://github.com/Dcoburn2/gpumon/blob/main/PRIVACY.md
 """)
     print(f"  wrote README.md{'' if not single_file else ' (single-file variant)'}")
 
@@ -378,6 +390,11 @@ def assemble() -> int:
         if os.path.exists(source):
             shutil.copy2(source, os.path.join(RELEASE, name))
 
+    # The licence, which MIT requires to travel with copies of the program.
+    licence = os.path.join(HERE, "LICENSE")
+    if os.path.exists(licence):
+        shutil.copy2(licence, os.path.join(RELEASE, "LICENSE"))
+
     write_release_scripts()
     write_release_readme()
     clean_runtime_files()
@@ -385,7 +402,7 @@ def assemble() -> int:
     # Anything that is not part of a release is a bug in this script, so say so
     # rather than shipping it.
     allowed_files = {"gpumon.exe", "README.md", RELEASE_SCRIPT, "gpumon.ico",
-                     "gpumon.png", "SHA256SUMS.txt"}
+                     "gpumon.png", "SHA256SUMS.txt", "LICENSE"}
     unexpected = [name for name in os.listdir(RELEASE)
                   if name not in allowed_files and name != "_internal"
                   and not os.path.isdir(os.path.join(RELEASE, name))]

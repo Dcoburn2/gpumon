@@ -89,6 +89,20 @@ if os.path.exists(archive):
           not any(name.startswith(("gpumon/test_", "gpumon/.git",
                                    "gpumon/dist/")) for name in names))
 
+print("\n[the licence travels with the download]")
+# MIT requires the copyright notice to be included in copies of the software, and
+# somebody who downloads a zip has no other way to see it.
+for folder in FOLDERS + [os.path.join("store", "layout")]:
+    path = os.path.join(folder, "LICENSE")
+    exists = os.path.exists(path)
+    check(f"{folder}/LICENSE is shipped", exists,
+          "" if exists else "the download carries no licence")
+    if exists:
+        text = open(path, encoding="utf-8").read()
+        check(f"{folder}/LICENSE names the copyright holder",
+              "Copyright (c) 2026 Darrell Coburn" in text,
+              text.splitlines()[2] if len(text.splitlines()) > 2 else "")
+
 print("\n[and the helper records what it did]")
 check("checksums are written whatever the signing state",
       callable(signing.checksums))
