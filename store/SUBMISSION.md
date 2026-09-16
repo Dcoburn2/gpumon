@@ -34,7 +34,66 @@ nothing to its install folder. `test_storepackage.py` proves it by running the
 packaged build from a scratch folder and checking that nothing appears beside the
 executable.
 
-## What to fill in
+## Drivers and NT services
+
+Partner Center asks whether the product depends on non-Microsoft drivers or NT
+services. Store policy **10.2.4.2** says: *"Generally, dependency on non-Microsoft
+provided drivers or NT services is not allowed but may be considered case by case
+for WHCP certified drivers. If your product has a dependency on non-Microsoft
+provided driver(s) or NT service(s), you must disclose that dependency to
+Microsoft in the certification notes."*
+
+**The answer for the Store package: no NT services, and no driver it installs or
+requires.** Audited from the source rather than from memory:
+
+| Question | Answer |
+|---|---|
+| Does it create or install an NT service? | **No.** No service-creation call exists anywhere in the program. |
+| What does it create instead? | A Windows **scheduled task** (`schtasks`), for the optional sensor helper — and only in the portable build. |
+| Which Windows services does it talk to? | Microsoft's own, only when present: WMI for hardware identification, and the performance counters (PDH). |
+| Non-Microsoft drivers | GPU readings go through NVIDIA's **NVML** and AMD's **ADL**: user-mode libraries that ship with the graphics card's own driver package, which must already be installed for the hardware to work at all. gpumon installs nothing. |
+| The CPU temperature driver | **PawnIO**, a non-Microsoft signed kernel driver. The Store package neither installs nor requires it. |
+
+The last row is the one to be careful about, so it is worth being exact.
+
+**The Store package has no dependency on it.** It has no setup step, ships no
+driver, downloads nothing, and is fully functional without one: GPU telemetry, CPU
+load, memory and per-core activity all work. It reads a per-user file if a sensor
+helper is *already* installed on that machine — which is a data file, not a
+driver call. The packaged build never opens the driver itself: only the helper
+process does, and that process is not in this package.
+
+**The portable build, distributed outside the Store, offers it as an optional
+one-time install.** The CPU package temperature is a register Windows does not
+expose to user mode; reading it needs a kernel driver, which is why every monitor
+that reports it installs one. That setup is user-initiated, explained, and
+removable. It is not part of what the Store distributes.
+
+### What to put in the certification notes
+
+> gpumon reads GPU telemetry through NVIDIA's NVML and AMD's ADL — user-mode
+> libraries that are part of the graphics card's own driver package, already
+> present on any machine with that hardware. It creates no NT service; it uses
+> Windows Task Scheduler for an optional helper, and that only in the separately
+> distributed portable build.
+>
+> The CPU package temperature requires a kernel driver (PawnIO, a signed
+> third-party driver). This Store package does not install, download, or require
+> it: it has no setup step at all and every other reading works without it. The
+> portable build, distributed outside the Store, offers that one-time install with
+> the user's explicit consent. This package only reads a per-user data file if the
+> helper is already present, and never opens the driver itself.
+
+If a reviewer prefers the Store package to contain no sensor-setup code at all,
+that is already how it is built: `python make_store_package.py` **disables the
+setup path in the binary** by default. `storemode.IS_STORE_BUILD` becomes True for
+that build, the command line refuses `--setup-sensors`, and the layout records it
+in `STORE-BUILD.txt`. `test_storedrivers.py` runs the packaged executable with
+`--setup-sensors` and asserts it refuses without downloading anything, so the claim
+is checked rather than asserted. `--allow-sensor-setup` exists only for building a
+local package that keeps the full feature set.
+
+
 
 | Field | Value |
 |---|---|

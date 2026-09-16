@@ -142,8 +142,38 @@ def write_tiles() -> None:
         print(f"  Assets/{name}  {width}x{height}")
 
 
-def build_layout() -> bool:
+def set_store_mode(enabled: bool) -> None:
+    """State in the source whether the next build is the Store package.
+
+    This is what makes the answer to Partner Center's question about drivers a
+    fact about the binary rather than a promise: with the flag set, the sensor
+    setup path refuses in the packaged build even if the run-time package check
+    were unavailable. `make_release.py` sets it back for the portable build.
+    """
+    path = os.path.join(HERE, "storemode.py")
+    text = open(path, encoding="utf-8").read()
+    wanted = "IS_STORE_BUILD = True" if enabled else "IS_STORE_BUILD = False"
+    import re
+    text = re.sub(r"IS_STORE_BUILD = (True|False)", wanted, text)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    print(f"  storemode.IS_STORE_BUILD = {enabled}")
+
+
+def build_layout(no_sensor_setup: bool = False) -> bool:
     """Copy the built program into the folder that becomes the package."""
+    if no_sensor_setup:
+        # Rebuild with the setup path disabled, so the package physically cannot
+        # install a driver. Costs a build, and buys a claim a reviewer can check.
+        set_store_mode(True)
+        print("rebuilding for the Store with the sensor setup disabled...")
+        result = subprocess.run([sys.executable, "make_release.py", "--build"],
+                                cwd=HERE, capture_output=True, text=True,
+                                errors="replace")
+        if result.returncode != 0:
+            set_store_mode(False)
+            print((result.stdout or result.stderr)[-400:])
+            return False
     if not os.path.exists(os.path.join(BUILD, "gpumon.exe")):
         print(f"nothing to package: build it first "
               f"(python make_release.py --build)")
@@ -177,6 +207,17 @@ def build_layout() -> bool:
                                      publisher=IDENTITY_PUBLISHER))
     print("  AppxManifest.xml")
     write_tiles()
+
+    # A marker saying how this package was built, so a test can tell whether it
+    # may safely be asked to set the sensors up. Running the installer by accident
+    # is exactly what this prevents: an earlier version of the test did, and it
+    # re-downloaded the modules and tried to register the tasks.
+    with open(os.path.join(LAYOUT, "STORE-BUILD.txt"), "w",
+              encoding="utf-8", newline="\r\n") as handle:
+        handle.write(
+            f"sensor setup disabled: {no_sensor_setup}\n"
+            f"storemode flag: {'True' if no_sensor_setup else 'False'}\n")
+    print(f"  STORE-BUILD.txt (sensor setup disabled: {no_sensor_setup})")
 
     # The Store build must not offer a setup it cannot perform.
     readme = os.path.join(LAYOUT, "README-STORE.txt")
@@ -279,7 +320,24 @@ if __name__ == "__main__":
                              "local test install")
     parser.add_argument("--layout-only", action="store_true",
                         help="write the package folder and stop")
+    parser.add_argument("--allow-sensor-setup", action="store_true",
+                        help="keep the sensor setup path in the package. Off by "
+                             "default: the Store package should not be able to "
+                             "install a driver at all, and Partner Center asks "
+                             "about exactly that.")
     options = parser.parse_args()
-    if not build_layout():
-        raise SystemExit(1)
-    raise SystemExit(0 if options.layout_only else pack(options.sign))
+    # The disable is the default, not the option: a Store package that cannot
+    # install a driver is the thing the submission claims, so a plain run of this
+    # script has to produce it. `--allow-sensor-setup` exists for a local package
+    # built to test the full feature set.
+    no_sensor_setup = not options.allow_sensor_setup
+    try:
+        if not build_layout(no_sensor_setup=no_sensor_setup):
+            raise SystemExit(1)
+        code = 0 if options.layout_only else pack(options.sign)
+    finally:
+        # The flag describes one build, not the source tree: leaving it set would
+        # make the next portable build refuse its own setup.
+        if no_sensor_setup:
+            set_store_mode(False)
+    raise SystemExit(code)

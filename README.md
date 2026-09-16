@@ -1013,6 +1013,36 @@ listing text, and the certification notes that pre-empt the driver question.
 [storedeveloper.microsoft.com](https://storedeveloper.microsoft.com), because
 going through Partner Center directly gets the legacy paid flow.
 
+### Drivers and NT services
+
+The Store asks this directly, and policy
+[10.2.4.2](https://learn.microsoft.com/en-us/windows/apps/publish/store-policies)
+requires disclosing any dependency on non-Microsoft drivers or NT services.
+
+**gpumon creates no NT service.** There is no service-creation call in the
+program. It uses Windows Task Scheduler for the optional sensor helper — a task,
+not a service — and it *reads* Microsoft's own services when they are there (WMI
+for hardware identification, the performance counters for GPU engine utilisation).
+
+**GPU readings use the vendor's drivers, which are already installed.** NVIDIA's
+NVML and AMD's ADL are user-mode libraries that ship inside the graphics card's
+own driver package; without that package the hardware would not work at all.
+gpumon installs nothing and ships no driver.
+
+**The CPU package temperature needs a kernel driver, and the Store package does
+not use one.** That register is not exposed to user mode, which is why every
+monitor that reports it installs a driver. In the packaged build the sensor-setup
+path is **disabled at build time** — `make_store_package.py` sets
+`storemode.IS_STORE_BUILD`, and the command line then refuses `--setup-sensors`
+instead of raising a prompt Windows would refuse. The packaged build reads a
+per-user data file if a helper is already installed on that machine; it never
+opens the driver itself, because only the helper process does, and that process is
+not part of the package. The portable download offers that install once, with the
+user's consent.
+
+`test_storedrivers.py` checks all of this against the source and by running the
+packaged executable, so the answer to that Store question stays true.
+
 ## Signing
 
 **An unsigned executable cannot be made trusted by anything inside it.** A

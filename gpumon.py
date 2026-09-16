@@ -976,7 +976,14 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.setup_sensors:
         if _refuse_off_windows("--setup-sensors",
-                              "it fetches and drives LibreHardwareMonitor"):
+                              "it installs a sensor driver"):
+            return 2
+        # A Store build stops here rather than raising a prompt Windows would
+        # refuse. The packaging script disables this path in the binary, which is
+        # what the answer to Partner Center's driver question rests on.
+        import storemode
+        if storemode.IS_STORE_BUILD or apppaths.is_packaged():
+            print(storemode.REFUSAL)
             return 2
         return _setup_sensors(extra)
 
