@@ -94,8 +94,9 @@ jobs:
             --hidden-import psutil gpumon.py
 
       - name: Package it as a tarball
-        # What a Linux user expects: a tarball with the binary, the licence and the
-        # readme, not a bare executable.
+        # What a Linux user expects: a tarball with the binary, the licence, the
+        # readme, and a note saying exactly how much of this has been tried - so
+        # the archive describes itself rather than depending on the release page.
         run: |
           VERSION=$(python -c "import re,pathlib; print(re.search(r'APP_VERSION = \"([^\"]+)\"', pathlib.Path('sampler.py').read_text()).group(1))")
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
@@ -103,6 +104,33 @@ jobs:
           mkdir -p "package/$NAME"
           cp dist/gpumon "package/$NAME/gpumon"
           cp LICENSE README.md "package/$NAME/"
+          cat > "package/$NAME/README-LINUX.txt" <<'NOTE'
+          gpumon for Linux
+          ================
+
+          This build is new, and this is what has and has not been tried.
+
+          Tested, on a Linux runner: the whole test suite (39 files), the program's
+          modules importing, the platform dispatch, the CPU and memory readers, the
+          interface drawing, and this binary starting and passing its own self-test.
+
+          NOT tested: anything that needs a graphics card. The runner has none, so
+          the AMD sysfs reader, rocm-smi and the NVIDIA NVML path have only ever been
+          exercised against fixtures. If the GPU half behaves oddly on your machine,
+          that is the part nobody has seen running.
+
+          Running it
+          ----------
+            ./gpumon            desktop window (needs Tk; on Debian or Ubuntu:
+                                sudo apt install python3-tk)
+            ./gpumon tui        full-screen terminal view, no toolkit needed
+            ./gpumon web        browser interface on http://127.0.0.1:8080
+            ./gpumon --help     everything else
+
+          gpumon is MIT licensed: see LICENSE. It collects nothing about you; the
+          privacy policy is at https://github.com/Dcoburn2/gpumon/blob/main/PRIVACY.md
+          NOTE
+          sed -i 's/^          //' "package/$NAME/README-LINUX.txt"
           tar -czf "${NAME}.tar.gz" -C package "$NAME"
           sha256sum "${NAME}.tar.gz" > "${NAME}.tar.gz.sha256"
           echo "NAME=$NAME" >> "$GITHUB_ENV"
@@ -138,19 +166,9 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          # Files only, no body: the Windows job writes the release notes, and two
+          # jobs setting a body means whichever finishes last wins. What a Linux
+          # user needs to know is inside the tarball, as README-LINUX.txt.
           files: |
             gpumon-*-linux-x86_64.tar.gz
             gpumon-*-linux-x86_64.tar.gz.sha256
-          body: |
-            The Linux build is new and honest about what it is: **built and tested
-            on a Linux runner with no graphics card**, so the GPU readers have never
-            been exercised against real hardware. CPU, memory and the interface are
-            tested; the AMD sysfs and rocm-smi paths are not.
-
-            ```sh
-            tar -xzf gpumon-*-linux-x86_64.tar.gz
-            cd gpumon-*-linux-x86_64
-            ./gpumon            # desktop window (needs Tk)
-            ./gpumon tui        # terminal view, no toolkit needed
-            ./gpumon web        # browser interface
-            ```
