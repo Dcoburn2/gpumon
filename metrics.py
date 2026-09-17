@@ -2007,6 +2007,13 @@ class SensorManager:
 
     def capabilities(self) -> Capabilities:
         source = self.cpu_temp_source()
+        # The notes are rebuilt here, not just once at construction. A sensor that
+        # goes away while the program is running - the helper stops publishing, a
+        # fallback disappears - used to leave the interface showing no CPU
+        # temperature and saying nothing about why, because the notes still
+        # described the machine as it was at startup. That is the state a user
+        # spends most of their time in: the reading is there, then it is not.
+        self._build_notes()
         return Capabilities(gpus=list(self.gpus), cpu_temp=bool(source),
                             backend_errors=dict(self.backend_errors),
                             notes=list(self.notes))

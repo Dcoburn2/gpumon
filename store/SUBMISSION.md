@@ -140,20 +140,50 @@ in their Documents folder.
 
 ### The values the manifest needs
 
-Partner Center assigns three of these when you reserve the name. **The manifest
-must match them exactly or the package is rejected.** `scripts/make_store_package.py`
-holds them at the top of the file:
+Partner Center assigns these when you reserve the name. **The manifest must match
+them exactly or the package is rejected.** Set them in the environment, so a
+package can be built for a reservation without editing code:
 
-```python
-IDENTITY_NAME = "gpumon.gpumon"     # -> Package/Identity/Name
-IDENTITY_PUBLISHER = "CN=gpumon"    # -> Package/Identity/Publisher
-VERSION = "1.0.0.0"                 # -> Package/Identity/Version (x.y.z.0)
+```powershell
+$env:GPUMON_STORE_NAME = "…"            # Product identity -> Package/Identity/Name
+$env:GPUMON_STORE_PUBLISHER = "CN=…"    # Product identity -> Package/Identity/Publisher
+$env:GPUMON_STORE_DISPLAY_NAME = "…"    # your publisher display name
+$env:GPUMON_STORE_VERSION = "1.0.0.0"   # x.y.z.0
+python scripts/make_store_package.py
 ```
 
-Copy the three from Partner Center → *Product identity* into those constants,
-rebuild with `python scripts/make_store_package.py`, and upload
-`store/gpumon-<version>-x64.msix`. It does **not** need signing first: the Store
-re-signs it after certification.
+The package does not need signing first: the Store re-signs it after
+certification, which is the whole reason this route costs nothing.
+
+The defaults are at the top of `scripts/make_store_package.py`.
+
+**`PublisherDisplayName` is not the same thing as `Publisher`, and getting it
+wrong was the first validation error this package hit.** Partner Center checks it
+against the publisher display name on the *account* — `Darrell Coburn` here — and a
+mismatch stops the submission with:
+
+> The PublisherDisplayName element in the app manifest of gpumon-1.0.0.0-x64.msix
+> is gpumon, which doesn't match your publisher display name: Darrell Coburn.
+
+### What Partner Center says when the package is uploaded
+
+Three messages are normal, and one is a choice:
+
+| Message | What it means |
+|---|---|
+| **Error:** `PublisherDisplayName` mismatch | Set `GPUMON_STORE_DISPLAY_NAME` to your account's publisher display name and rebuild. |
+| **Warning:** restricted capability `runFullTrust` requires approval | Expected for a desktop app in a package. Justification below. |
+| **Error:** "must provide a package that supports each selected device family" | Uncheck the families this is not for — **Xbox in particular**, since a hardware monitor has nothing to monitor there. Keep **Windows 10/11 Desktop**. |
+| **Error:** "must upload at least one package" | A consequence of the failed upload, not a separate problem. |
+
+Justification for the `runFullTrust` request, for whenever the form asks:
+
+> gpumon is a desktop application: it draws its own window and reads hardware
+> sensors through the graphics driver's own user-mode libraries (NVIDIA NVML, AMD
+> ADL) and Windows performance counters. It needs full trust because a packaged app
+> cannot reach those interfaces from inside a container. It installs no driver,
+> creates no service, requires no elevation, and writes only to the user's own
+> profile and Documents folder.
 
 ### Privacy policy
 

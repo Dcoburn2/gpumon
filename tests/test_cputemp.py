@@ -137,12 +137,18 @@ check("capabilities agree with the source",
       f"{caps.cpu_temp} vs {source!r}")
 if manager.platform_name == "linux":
     check("a Linux machine never reports the Windows fallback", source != "acpi")
-if not source:
-    matching = [n for n in manager.notes
+# One call decides both questions. Asking separately let a reading age out in
+# between - the scratch reading above is stopped, so it ages from live to stale in
+# the middle of this test - and the two answers then contradicted each other:
+# capabilities() saw a live reading and added no note, the next poll found nothing
+# and the test demanded an explanation for a gap it had just created.
+_now = manager.capabilities()
+if not _now.cpu_temp:
+    matching = [n for n in _now.notes
                 if "CPU package temperature needs" in n
                 or "ACPI thermal zone" in n]
     check("a missing CPU temperature is explained, not left silent",
-          bool(matching), str(matching[:1]))
+          bool(matching), f"{matching[:1]} (notes: {_now.notes})")
     check("the explanation says why it is missing",
           any("kernel driver" in n or "ACPI thermal zone" in n for n in matching),
           str(matching[:1]))

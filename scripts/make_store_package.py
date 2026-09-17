@@ -32,12 +32,20 @@ STORE = os.path.join(HERE, "store")
 LAYOUT = os.path.join(STORE, "layout")
 BUILD = os.path.join(HERE, "dist", "gpumon")
 
-#: Identity values. `Name` and `Publisher` have to match what Partner Center
-#: assigns to the app; these are the placeholders a local build uses, and the
-#: comment says where to change them.
-IDENTITY_NAME = "gpumon.gpumon"
-IDENTITY_PUBLISHER = "CN=gpumon"
-VERSION = "1.0.0.0"
+#: Identity values, which must match Partner Center exactly or the package is
+#: rejected. Copy all four from Partner Center -> Product identity; they can also
+#: be set in the environment, so a package can be built for a reservation without
+#: editing this file.
+#:
+#: The display name is not the same thing as the publisher: Partner Center checks
+#: it against the *publisher display name* on the account, and a mismatch is a
+#: validation error that stops the submission. That is what happened the first
+#: time this package was uploaded, with "gpumon" against "Darrell Coburn".
+IDENTITY_NAME = os.environ.get("GPUMON_STORE_NAME", "gpumon.gpumon")
+IDENTITY_PUBLISHER = os.environ.get("GPUMON_STORE_PUBLISHER", "CN=gpumon")
+IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
+                                       "Darrell Coburn")
+VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.0.0")
 
 #: Tile sizes Microsoft requires, and the background the tiles are drawn on -
 #: the default theme's panel colour, so the Store listing looks like the program.
@@ -63,7 +71,7 @@ MANIFEST = """<?xml version="1.0" encoding="utf-8"?>
 
   <Properties>
     <DisplayName>gpumon</DisplayName>
-    <PublisherDisplayName>gpumon</PublisherDisplayName>
+    <PublisherDisplayName>{display_name}</PublisherDisplayName>
     <Description>Live GPU and system telemetry: utilisation, temperature, VRAM, clocks, power and fan for every graphics card, with CPU load, memory and per-core activity, graphs that scroll back through history, session logging and alarms.</Description>
     <Logo>Assets\\StoreLogo.png</Logo>
   </Properties>
@@ -215,7 +223,8 @@ def build_layout(no_sensor_setup: bool = False) -> bool:
     with open(os.path.join(LAYOUT, "AppxManifest.xml"), "w",
               encoding="utf-8") as handle:
         handle.write(MANIFEST.format(name=IDENTITY_NAME, version=VERSION,
-                                     publisher=IDENTITY_PUBLISHER))
+                                     publisher=IDENTITY_PUBLISHER,
+                                     display_name=IDENTITY_DISPLAY_NAME))
     print("  AppxManifest.xml")
     write_tiles()
 
