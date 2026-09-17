@@ -1,12 +1,14 @@
 # gpumon
 
-![gpumon monitoring three graphics cards, the processor and system memory](screenshots/monitor.png)
+<p align="center">
+  <a href="https://github.com/Dcoburn2/gpumon/raw/main/screenshots/monitor.png"><img src="screenshots/monitor.png" width="390" alt="Monitoring three graphics cards, the processor and system memory"></a>
+  <a href="https://github.com/Dcoburn2/gpumon/raw/main/screenshots/summary.png"><img src="screenshots/summary.png" width="390" alt="The session summary, with per-card statistics and CSV export"></a>
+</p>
 
-![Alarm thresholds for every metric on every card](screenshots/alarms.png)
-
-![Browsing logged sessions](screenshots/sessions.png)
-
-![The session summary, with per-card statistics and CSV export](screenshots/summary.png)
+<p align="center">
+  <a href="https://github.com/Dcoburn2/gpumon/raw/main/screenshots/alarms.png"><img src="screenshots/alarms.png" width="390" alt="Alarm thresholds for every metric on every card"></a>
+  <a href="https://github.com/Dcoburn2/gpumon/raw/main/screenshots/sessions.png"><img src="screenshots/sessions.png" width="390" alt="Browsing logged sessions"></a>
+</p>
 
 **Windows 10/11, 64-bit. [Download the latest release](https://github.com/Dcoburn2/gpumon/releases/latest) — no installer, no Python, no drivers.**
 
