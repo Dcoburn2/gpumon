@@ -1124,9 +1124,13 @@ class MonitorApp:
                                  wraplength=240)
         self.cpu_info.pack(anchor="w")
         # Per-core was a command-line flag only, which meant restarting the app
-        # to look at the cores during a run. It is a live toggle now.
-        self.btn_cores = W.FlatButton(left, " PER-CORE OFF ", self.toggle_per_core,
-                                      theme=t, pady=2)
+        # to look at the cores during a run. It is a live toggle now. The label
+        # says what is *actually* running: it used to be the literal string
+        # "PER-CORE OFF", so a session started with per-core on - which is what
+        # config.json says - showed all the cores while the button claimed they
+        # were off, until a toggle happened to correct it.
+        self.btn_cores = W.FlatButton(
+            left, self._per_core_label(), self.toggle_per_core, theme=t, pady=2)
         self.btn_cores.pack(anchor="w", pady=(4, 2))
         # Shown only while CPU temperature is missing, because that is the one
         # number gpumon cannot produce by itself: it needs LibreHardwareMonitor's
@@ -1383,6 +1387,12 @@ class MonitorApp:
         else:
             button.pack(anchor="w", pady=(4, 2))
             self.sensors_status.pack(anchor="w")
+
+    def _per_core_label(self) -> str:
+        """The button's text for the state per-core sampling is really in."""
+        backend = getattr(self.manager, "system", None)
+        on = bool(getattr(backend, "per_core", False))
+        return " PER-CORE ON " if on else " PER-CORE OFF "
 
     def toggle_per_core(self, force: bool | None = None) -> None:
         """Turn per-core CPU sampling on or off while the app is running.
@@ -1804,7 +1814,7 @@ class MonitorApp:
             canvas.create_text(6, 12, anchor="w", fill=W.TEXT_DIM,
                                font=self.theme.tiny,
                                text="per-core utilisation off  "
-                                    "(run with --per-core to record it)")
+                                    "(the PER-CORE button turns it on)")
             return
 
         # Measured, not guessed: at font size 8 a Tk text item is 15 px tall, so
