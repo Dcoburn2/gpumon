@@ -40,6 +40,19 @@ def _skip_machine_specific_test() -> None:
         raise SystemExit(0)
 
 
+def _windows_only_test() -> None:
+    """Stop, with a note, on anything that is not Windows.
+
+    Some of the suite is about Windows itself: the .cmd launcher, the registry
+    lookup for the desktop folder, LibreHardwareMonitor's Windows backends, a
+    signing stub written as a .cmd, ctypes.WinDLL. None of that can say anything
+    about a Linux machine, and a failure there is noise rather than a finding.
+    """
+    if _os.name != "nt":
+        print("  --  skipped: this test is about Windows")
+        raise SystemExit(0)
+
+
 
 
 
@@ -119,8 +132,13 @@ for module in ("ui.monitor", "ui.summary", "tui", "termlib", "webserver",
 
 print("\n[4] platform dispatch")
 import platforms as PL
-check("current_platform reports windows here",
-      PL.current_platform() == "windows", PL.current_platform())
+# The dispatch has to agree with the OS it is running on, not with the OS this
+# test was written on: asserting "windows" made the suite fail on Linux for no
+# reason other than that Linux is not Windows.
+expected_platform = {"nt": "windows", "posix": "linux"}.get(os.name, "linux")
+check(f"current_platform reports {expected_platform} here",
+      PL.current_platform() == expected_platform,
+      f"{PL.current_platform()} (os.name is {os.name!r})")
 try:
     import platforms.linux as LX
     check("platforms.linux imports on Windows", True)

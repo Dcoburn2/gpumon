@@ -1902,6 +1902,16 @@ class SensorManager:
             for label, reason in self.backend_errors.items():
                 if label not in covered:
                     notes.append(f"{label} unavailable: {reason}")
+            # A missing CPU temperature is explained per OS, because the reason
+            # differs: Windows needs a kernel driver, where Linux needs a readable
+            # sensor in sysfs and normally has one. This was written only for
+            # Windows, so a Linux machine with no temperature said nothing about
+            # it - which is what the first Linux run of the suite found.
+            if not self.cpu_temp_source():
+                notes.append(
+                    "No CPU temperature: neither /sys/class/thermal nor "
+                    "/sys/class/hwmon published a readable temperature on this "
+                    "machine.")
         return notes
 
     def _windows_notes(self) -> list[str]:
@@ -1930,6 +1940,11 @@ class SensorManager:
             # gpumon's own reader answered: nothing to explain, and saying
             # anything here would be noise on a machine that is working.
             pass
+        elif source == "thermal":
+            notes.append(
+                "CPU temperature comes from the kernel's thermal zone "
+                "(`/sys/class/thermal`), which is usually the package or the "
+                "board sensor depending on the platform.")
         elif source == "acpi":
             notes.append(
                 "CPU temperature comes from the firmware's ACPI thermal zone - "

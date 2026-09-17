@@ -39,6 +39,19 @@ def _skip_machine_specific_test() -> None:
         raise SystemExit(0)
 
 
+def _windows_only_test() -> None:
+    """Stop, with a note, on anything that is not Windows.
+
+    Some of the suite is about Windows itself: the .cmd launcher, the registry
+    lookup for the desktop folder, LibreHardwareMonitor's Windows backends, a
+    signing stub written as a .cmd, ctypes.WinDLL. None of that can say anything
+    about a Linux machine, and a failure there is noise rather than a finding.
+    """
+    if _os.name != "nt":
+        print("  --  skipped: this test is about Windows")
+        raise SystemExit(0)
+
+
 
 
 

@@ -38,7 +38,7 @@ jobs:
       - name: Install the build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk
+          sudo apt-get install -y python3-tk xvfb
           python -m pip install --upgrade pip
           python -m pip install pyinstaller psutil pyyaml
 
@@ -59,13 +59,18 @@ jobs:
         # test would otherwise end the step before the loop could record it - which
         # is exactly what happened on the first run, leaving no annotations and
         # therefore no information.
+        #
+        # `xvfb-run` gives the window tests a display. Four of them failed on the
+        # first run with "no display name and no $DISPLAY", which says nothing
+        # about the program; with a virtual display they run for real, and the
+        # interface is genuinely exercised on Linux for the first time.
         run: |
           set +e
           failed=0
           for test in dev/tests/test_*.py; do
             name=$(basename "$test")
             echo "== $name"
-            output=$(timeout 300 python "$test" 2>&1)
+            output=$(xvfb-run -a timeout 300 python "$test" 2>&1)
             code=$?
             echo "$output"
             if [ $code -ne 0 ]; then
@@ -74,7 +79,7 @@ jobs:
               echo "::error title=$name::$why"
             fi
           done
-          python gpumon.py --selftest || failed=1
+          xvfb-run -a python gpumon.py --selftest || failed=1
           exit $failed
         shell: bash
 
