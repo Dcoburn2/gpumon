@@ -267,6 +267,11 @@ class Sparkline(tk.Canvas):
         #: one. 0 means live; anything else means the trace is history and the
         #: frame is tinted to say so.
         self.offset = 0
+        #: Where the pointer is, when it is over the plot: (x, y) or None. The
+        #: guide and its readout follow this.
+        self._hover: tuple[int, int] | None = None
+        self.bind("<Motion>", self._on_motion)
+        self.bind("<Leave>", self._on_leave)
 
     # -- configuration ---------------------------------------------------
     def add_series(self, key: str, color: str) -> SparkSeries:
@@ -295,6 +300,87 @@ class Sparkline(tk.Canvas):
     def set_offset(self, offset: int) -> None:
         """Slide the view back through the buffer (0 = follow the newest)."""
         self.offset = max(0, int(offset))
+
+    def _on_motion(self, event: tk.Event) -> None:
+        x0, _y0, x1, _y1 = self._plot_box()
+        inside = x0 <= event.x <= x1 and 0 <= event.y <= self.h
+        new_state = (event.x, event.y) if inside else None
+        if new_state != self._hover:
+            self._hover = new_state
+            self.render()
+
+    def _on_leave(self, _event: tk.Event) -> None:
+        if self._hover is not None:
+            self._hover = None
+            self.render()
+
+    def sample_at(self, series: SparkSeries,
+                  x: float) -> tuple[float, float] | None:
+        """(x, value) of the plotted sample nearest this x, or None.
+
+        The same arithmetic the trace is drawn with, deliberately: pixels per
+        sample come from capacity, and `offset` slides that window back through
+        the buffer. Computed any other way, the guide would drift away from the
+        line it is meant to be pointing at.
+        """
+        values = series.values
+        if len(values) < 2:
+            return None
+        step = max(1, len(values) // self._max_points)
+        sampled = values[::step]
+        total = max(self.capacity, len(sampled))
+        count = len(sampled)
+        x0, _y0, x1, _y1 = self._plot_box()
+        dx = (x1 - x0) / max(1, total - 1)
+        index = int(round((x - x0) / dx + self.offset - (total - count)))
+        index = max(0, min(count - 1, index))
+        value = sampled[index]
+        if value is None or value != value:
+            return None                  # a gap in the trace is not a value
+        return x0 + (total - count + index - self.offset) * dx, float(value)
+
+    def _draw_cursor(self) -> None:
+        """A vertical guide under the pointer, with each series' value beside it.
+
+        The numbers sit just to the right of the guide, in the colour of the line
+        they belong to, over a small panel-coloured backing so they stay readable
+        where the trace runs underneath them. If there is no room to the right -
+        the pointer near the live edge - they move to the left of the guide
+        instead, rather than being clipped off the chart.
+        """
+        assert self._hover is not None
+        x0, y0, x1, y1 = self._plot_box()
+        hits = [(series, hit) for series in self._series
+                if (hit := self.sample_at(series, self._hover[0])) is not None]
+        if not hits:
+            return
+
+        guide_x = hits[0][1][0]
+        self.create_line(guide_x, y0, guide_x, y1, fill=C.text_dim, dash=(2, 2))
+
+        font = self._legend_font
+        rows = []
+        for series, (_px, value) in hits:
+            name, unit = hover_label(series.key)
+            rows.append((f"{name} {_axis_num(value)}{unit}", series.color))
+        try:
+            widest = max(self.tk.call("font", "measure", font, row[0])
+                         for row in rows)
+        except tk.TclError:
+            # A font the measurement call does not understand is not worth
+            # failing a redraw for; count characters instead.
+            widest = max(len(row[0]) for row in rows) * 7
+        box_w = int(widest) + 10
+        box_h = 12 * len(rows) + 4
+        right = guide_x + 5
+        if right + box_w > x1:
+            right = max(x0 + 1, guide_x - 5 - box_w)
+        top = min(max(y0 + 2, y0 + 2), max(y0 + 2, y1 - box_h - 2))
+        self.create_rectangle(right, top, right + box_w, top + box_h,
+                              fill=C.plot_bg, outline=C.border)
+        for index, (text, color) in enumerate(rows):
+            self.create_text(right + 5, top + 3 + index * 12, text=text,
+                             anchor="nw", fill=color, font=font)
 
     def visible_samples(self) -> int:
         """How many samples the view can show at once."""
@@ -355,6 +441,10 @@ class Sparkline(tk.Canvas):
             self._draw_legend()
         if self.show_badge:
             self._draw_badge()
+        # The cursor guide goes on before the frame, so the frame stays the last
+        # thing drawn and the chart still looks bounded while the pointer is on it.
+        if self._hover is not None:
+            self._draw_cursor()
         # Hairline frame last so it sits over the fill. Panned off the live edge
         # it changes colour, so a chart showing history never looks live.
         self.create_rectangle(0, 0, self.w - 1, self.h - 1,
@@ -1230,6 +1320,38 @@ def _axis_num(value: float) -> str:
     if abs(value) >= 10:
         return f"{value:.0f}"
     return f"{value:.1f}"
+
+
+#: How a metric reads in a hover readout: (name, unit). The keys are the program's
+#: own, so anywhere a chart is drawn the guide says "GPU 42%" rather than
+#: "gpu0_util 42" - which is a key, not an answer.
+_HOVER_LABELS: dict[str, tuple[str, str]] = {
+    "cpu_util": ("CPU", "%"),
+    "cpu_temp": ("TEMP", "\u00b0C"),
+    "cpu_clock": ("CPU", "MHz"),
+    "ram_percent": ("RAM", "%"),
+    "ram_used": ("RAM", "GB"),
+    "temp": ("TEMP", "\u00b0C"),
+    "hotspot": ("hotspot", "\u00b0C"),
+    "mem_temp": ("mem", "\u00b0C"),
+    "util": ("GPU", "%"),
+    "mem_util": ("mem", "%"),
+    "vram_percent": ("VRAM", "%"),
+    "vram_used": ("VRAM", "MB"),
+    "vram_total": ("VRAM", "MB"),
+    "clock_core": ("CORE", "MHz"),
+    "clock_mem": ("MEM", "MHz"),
+    "power": ("PWR", "W"),
+    "power_percent": ("PWR", "%"),
+    "fan": ("FAN", "rpm"),
+    "fan_percent": ("FAN", "%"),
+    "temp_limit": ("limit", "\u00b0C"),
+}
+
+
+def hover_label(key: str) -> tuple[str, str]:
+    """(name, unit) for a metric key, falling back to the key itself."""
+    return _HOVER_LABELS.get(key, (key, ""))
 
 
 def _fmt_hover(value: float) -> str:

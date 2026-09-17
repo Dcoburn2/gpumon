@@ -702,6 +702,22 @@ class SummaryWindow:
     # ------------------------------------------------------------------
     # Configuration tab
     # ------------------------------------------------------------------
+    def _processor_name(self) -> str:
+        """The processor, for the session's own record.
+
+        Taken live rather than stored in the session, because the session file
+        records the cards it saw and nothing about the CPU. A summary opened on
+        another machine therefore names the processor of the machine you are
+        reading it on - which is worth knowing, and is why the label says
+        "this machine" when the session came from elsewhere.
+        """
+        try:
+            import cpusensors
+            name = cpusensors.processor_name()
+        except Exception:  # noqa: BLE001 - a missing row is not worth a failure
+            return "unknown"
+        return name
+
     def _build_config_tab(self) -> None:
         t = self.theme
         page_widget, page = self._scrollable(self.nb)
@@ -720,6 +736,10 @@ class SummaryWindow:
             ("Samples", str(self.session.sample_count)),
             ("Database", self.store.path),
             ("gpumon version", self.session.app_version or "unknown"),
+            # The processor this session was recorded on. The hardware list below
+            # names the graphics cards; the CPU was in neither, so a summary could
+            # not say what machine it came from.
+            ("Processor", self._processor_name()),
         ]
         box = tk.Frame(page, bg=W.PANEL, highlightthickness=1,
                        highlightbackground=W.BORDER)
