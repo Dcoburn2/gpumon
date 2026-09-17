@@ -57,6 +57,8 @@ def _windows_only_test() -> None:
         print("  --  skipped: this test is about Windows")
         raise SystemExit(0)
 
+_windows_only_test()
+
 
 
 

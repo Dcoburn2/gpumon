@@ -1,0 +1,22 @@
+Fix what the second Linux run found
+
+Four left after the display and the platform guards, and the important one is a
+real bug in the launch path:
+
+    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
+looks defensive and is not. The fallback makes the value zero, but subprocess
+rejects the keyword outright on POSIX whatever it holds - "ValueError:
+creationflags is only supported on Windows platforms" - so anything that spawned a
+process failed on Linux. metrics._run guarded this correctly; the five places that
+did not now use a helper returning an empty dict off Windows.
+
+The rest were tests: the icon check expected a multi-resolution .ico, which is a
+Windows thing and a .png elsewhere; the missing-CPU-temperature check looked for
+the Windows wording, where Linux now says what Linux looked at; and
+test_storedrivers is about the Microsoft Store, whose refusal messages are the
+Windows ones, so it is guarded like the other Windows-only tests.
+
+Windows suite still green: 39 files, 0 failures. Seven tests are now
+platform-guarded and fourteen machine-guarded, so a Linux run reports on Linux
+rather than on the absence of Windows.

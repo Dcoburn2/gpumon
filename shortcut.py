@@ -28,6 +28,16 @@ $link.Save()
 """
 
 
+
+
+def _no_window() -> dict[str, int]:
+    """Subprocess arguments that keep a console from flashing up, on Windows.
+
+    An empty dict elsewhere: passing `creationflags=0` is not the same as leaving
+    the keyword out, and subprocess refuses the keyword on POSIX entirely.
+    """
+    return {"creationflags": 0x08000000} if os.name == "nt" else {}
+
 def desktop_directory() -> str:
     """The user's desktop, wherever Windows has put it.
 
@@ -95,7 +105,7 @@ def create_shortcut(directory: str | None = None, name: str = SHORTCUT_NAME,
             ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
              "-Command", script],
             capture_output=True, text=True, errors="replace",
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            **_no_window())
     except OSError as exc:
         return False, f"could not run PowerShell: {exc}"
     if result.returncode != 0 or not os.path.exists(path):

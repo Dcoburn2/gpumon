@@ -74,6 +74,16 @@ class _Step:
         print(f"\n== {text}")
 
 
+
+
+def _no_window() -> dict[str, int]:
+    """Subprocess arguments that keep a console from flashing up, on Windows.
+
+    An empty dict elsewhere: passing `creationflags=0` is not the same as leaving
+    the keyword out, and subprocess refuses the keyword on POSIX entirely.
+    """
+    return {"creationflags": 0x08000000} if os.name == "nt" else {}
+
 def _print_step(text: str) -> None:
     print(f"\n== {text}")
 
@@ -153,9 +163,7 @@ def install_pawnio(installer: str) -> bool:
     if os.name != "nt":
         return False
     try:
-        process = subprocess.Popen(
-            [installer, "/S"], creationflags=getattr(subprocess,
-                                                     "CREATE_NO_WINDOW", 0))
+        process = subprocess.Popen([installer, "/S"], **_no_window())
         process.wait(timeout=180)
     except (OSError, subprocess.TimeoutExpired) as exc:
         print(f"    the installer did not finish: {exc}")
@@ -265,7 +273,7 @@ def helper_action() -> str:
 def _schtasks(args: list[str]) -> tuple[int, str]:
     result = subprocess.run(["schtasks"] + args, capture_output=True, text=True,
                             errors="replace",
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                            **_no_window())
     output = (result.stdout + result.stderr).strip().splitlines()
     return result.returncode, output[-1].strip() if output else ""
 
@@ -296,7 +304,7 @@ def task_action(name: str = HELPER_TASK) -> str:
     result = subprocess.run(["schtasks", "/query", "/tn", name, "/fo", "LIST",
                              "/v"], capture_output=True, text=True,
                             errors="replace",
-                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                            **_no_window())
     for line in result.stdout.splitlines():
         if "Task To Run" in line:
             return line.split(":", 1)[-1].strip()
@@ -433,7 +441,7 @@ def run_setup_elevated() -> tuple[bool, str]:
             ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
              "-Command", setup_command()],
             capture_output=True, text=True, errors="replace",
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            **_no_window())
     except OSError as exc:
         return False, f"could not raise the prompt: {exc}"
     if result.returncode != 0:

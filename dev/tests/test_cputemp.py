@@ -164,9 +164,12 @@ if manager.platform_name == "linux":
 # and the test demanded an explanation for a gap it had just created.
 _now = manager.capabilities()
 if not _now.cpu_temp:
+    # The wording differs by platform, because the reason does: Windows needs a
+    # kernel driver, Linux needs a readable sensor in sysfs.
     matching = [n for n in _now.notes
                 if "CPU package temperature needs" in n
-                or "ACPI thermal zone" in n]
+                or "ACPI thermal zone" in n
+                or "No CPU temperature" in n]
     check("a missing CPU temperature is explained, not left silent",
           bool(matching), f"{matching[:1]} (notes: {_now.notes})")
     check("the explanation says why it is missing",

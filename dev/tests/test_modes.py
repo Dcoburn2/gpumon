@@ -159,7 +159,7 @@ root.withdraw()
 applied = gpumon._apply_window_icon(root)
 root.update()
 check("icon applied", bool(applied), os.path.basename(applied) if applied else "")
-check("icon is the multi-resolution .ico", applied.endswith(".ico"),
+check("icon is the .ico on Windows and a .png elsewhere", applied.endswith(".ico"),
       os.path.basename(applied))
 root.destroy()
 
