@@ -65,7 +65,14 @@ class SummaryWindow:
         # transient dialog.
         self.win.resizable(True, True)
         self.win.protocol("WM_DELETE_WINDOW", self.close)
-        self.win.attributes("-toolwindow", False)
+        # `-toolwindow` is a Windows window attribute: Tk on X11 rejects it with
+        # "bad attribute", which is how the first Linux run of the suite found it.
+        # The line says "this is a normal window, not a palette", and that is
+        # already the default everywhere else.
+        try:
+            self.win.attributes("-toolwindow", False)
+        except tk.TclError:
+            pass
         self._build()
         self.focus()
 

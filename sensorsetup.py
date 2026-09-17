@@ -271,6 +271,15 @@ def helper_action() -> str:
 
 
 def _schtasks(args: list[str]) -> tuple[int, str]:
+    """Run schtasks, or explain that there is none.
+
+    Task Scheduler is Windows: on anything else the executable does not exist, and
+    subprocess raises FileNotFoundError rather than returning a failure - which is
+    how a Linux run of the suite discovered this. Every caller of this function
+    wants a (code, message) pair, so that is what they get on either platform.
+    """
+    if os.name != "nt":
+        return 1, "Task Scheduler is Windows-only"
     result = subprocess.run(["schtasks"] + args, capture_output=True, text=True,
                             errors="replace",
                             **_no_window())
@@ -298,6 +307,8 @@ def task_exists(name: str) -> bool:
 
 def task_action(name: str = HELPER_TASK) -> str:
     """What a registered task actually runs, or an empty string."""
+    if os.name != "nt":
+        return ""                      # there is no Task Scheduler to ask
     code, _ = _schtasks(["/query", "/tn", name, "/fo", "LIST", "/v"])
     if code != 0:
         return ""
