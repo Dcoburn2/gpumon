@@ -852,9 +852,19 @@ class MonitorApp:
                     spark.grid_remove()
         # The CPU/RAM/TEMP charts are graphs too. Leaving them on made the G
         # toggle look broken: the card graphs vanished and three stayed.
+        system_graph = max(60, room(False)) if show_graphs else 0
+        if getattr(self, "system_frame", None) is not None:
+            # The same left width as the cards, so the two line up, and the width
+            # the graph column has left. This panel has no stats column, which is
+            # why it asks for the room a card would have without one.
+            self.system_left.configure(width=left_w)
         for spark in self.system_sparks.values():
             if show_graphs:
                 spark.grid()
+                try:
+                    spark.configure(width=system_graph)
+                except tk.TclError:
+                    pass
             else:
                 spark.grid_remove()
         self._graph_width = graph_w
@@ -1087,9 +1097,14 @@ class MonitorApp:
                          highlightbackground=W.BORDER)
         frame.pack(fill="x", padx=10, pady=(0, 6))
         frame.grid_columnconfigure(3, weight=1)
+        # Kept so the layout pass can size them with the window, the way it sizes
+        # the card rows. Without this the three charts stayed the width they were
+        # created at while everything around them moved.
+        self.system_frame = frame
 
         left = tk.Frame(frame, bg=W.PANEL, width=250)
         left.grid(row=0, column=0, rowspan=2, sticky="nsw", padx=(10, 6), pady=6)
+        self.system_left = left
         tk.Label(left, text="cpu / memory", bg=W.PANEL, fg=W.TEXT_BRIGHT,
                  font=t.bold, anchor="w").pack(anchor="w")
         # The processor by name. The card header said only "cpu / memory" before,
@@ -1141,7 +1156,10 @@ class MonitorApp:
                                 capacity=int(SPARK_SECONDS * self._spark_hz) + 32,
                                 bg=W.PANEL, grid=False,
                                 series=[(key, field_color(key))])
-            spark.grid(row=row, column=3, sticky="e", padx=(6, 10), pady=1)
+            # "ew", so the grid stretches it to the column the layout pass sizes.
+            # It was "e" - right-aligned and never widened - which is why these
+            # three charts did not follow the window while the card graphs did.
+            spark.grid(row=row, column=3, sticky="ew", padx=(6, 10), pady=1)
             self.system_sparks[key] = spark
             self.system_values[key] = value
 
