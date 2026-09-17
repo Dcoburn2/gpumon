@@ -18,6 +18,19 @@ for _extra in (_ROOT, _os.path.join(_ROOT, "scripts")):
         _sys.path.insert(0, _extra)
 _os.chdir(_ROOT)
 
+def _skip_machine_specific_test() -> None:
+    """Stop, with a note, when there is no hardware or desktop to test against.
+
+    Set by continuous integration. A test that measures a window or asserts that
+    a vendor's library is installed cannot say anything useful on a machine that
+    has neither, and reporting a failure there trains everybody to ignore red.
+    """
+    if _os.environ.get("GPUMON_SKIP_MACHINE_TESTS"):
+        print("  --  skipped: this test needs a GPU, a vendor driver, a desktop "
+              "session or the sensor driver, and GPUMON_SKIP_MACHINE_TESTS is set")
+        raise SystemExit(0)
+
+
 
 
 

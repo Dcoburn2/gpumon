@@ -59,16 +59,27 @@ jobs:
         # readable through the API without a token and the log is not. That is how
         # a runner-only failure gets diagnosed without asking anyone to copy text
         # out of a web page.
+        #
+        # GPUMON_SKIP_MACHINE_TESTS stops the tests that measure this machine
+        # rather than the program: they assert that NVIDIA's and AMD's libraries
+        # are installed, that the sensor driver is present, that a window is
+        # visible and scrollable, and that three GPUs are enumerable. A runner has
+        # none of that, and a red build caused by absent hardware trains everybody
+        # to ignore red. They run in full on a machine that has the hardware -
+        # which is where they were written and where they have always passed.
+        env:
+          GPUMON_SKIP_MACHINE_TESTS: "1"
         run: |
           $failed = 0
           Get-ChildItem tests/test_*.py | ForEach-Object {
             $name = $_.Name
             $job = Start-Job -ScriptBlock {
-              param($path)
+              param($path, $skip)
               Set-Location $using:pwd
+              if ($skip) { $env:GPUMON_SKIP_MACHINE_TESTS = $skip }
               & python $path 2>&1
               "EXIT=$LASTEXITCODE"
-            } -ArgumentList $_.FullName
+            } -ArgumentList $_.FullName, $env:GPUMON_SKIP_MACHINE_TESTS
             if (Wait-Job $job -Timeout 300) {
               $out = Receive-Job $job
               $code = ($out | Select-String '^EXIT=' | Select-Object -Last 1)
