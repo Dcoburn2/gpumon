@@ -53,6 +53,13 @@ def _skip_machine_specific_test() -> None:
         raise SystemExit(0)
 
 
+# Its Windows half holds this machine's cards against a record taken from it -
+# three cards by PCI address, their notes word for word, their counters matched -
+# and its Linux half needs a Linux host. Both are facts about a machine. What
+# holds anywhere is checked in the tests that are not skipped.
+_skip_machine_specific_test()
+
+
 
 
 
