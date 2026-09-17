@@ -585,9 +585,15 @@ eq("Linux-only backends stay stubs on Windows",
    [False, False, False, False])
 check("every row has an index, a name and a PCI address",
       all(g.name and g.pci for g in manager.gpus), str(rows))
-check("every non-NVIDIA card has at least one utilisation counter",
-      all(g.luids for g in manager.gpus if g.vendor != "nvidia"),
-      str([(g.index, g.luids) for g in manager.gpus]))
+# Counters are matched to cards by ADL or by PDH, so the rule only applies where
+# one of those is present: a virtual display adapter publishes neither, and
+# holding it to this would be holding the runner to having a graphics card.
+if adl_up or pdh_up:
+    check("every non-NVIDIA card has at least one utilisation counter",
+          all(g.luids for g in manager.gpus if g.vendor != "nvidia"),
+          str([(g.index, g.luids) for g in manager.gpus]))
+else:
+    print("    --  no counter source here, so cards cannot be matched to one")
 check("NVIDIA rows report a PCI address and a VRAM total",
       all(g.pci and g.vram_total_mb for g in manager.gpus
           if g.vendor == "nvidia"))
@@ -641,11 +647,26 @@ values = manager.poll()
 for key in ("cpu_util", "ram_percent", "cpu_clock", "ram_used"):
     check(f"poll() returns a number for {key}",
           isinstance(values.get(key), float), repr(values.get(key)))
-check("poll() still reports a GPU temperature",
-      isinstance(values.get("gpu0_temp"), float), repr(values.get("gpu0_temp")))
-check("poll() still reports AMD utilisation for both cards",
-      all(isinstance(values.get(f"gpu{i}_util"), float) for i in (1, 2)),
-      repr([values.get(f"gpu{i}_util") for i in (1, 2)]))
+# The next two ask a GPU to answer. They are worth checking where there is one,
+# and meaningless where there is not: a runner's virtual display adapter reports
+# no temperature and publishes no counters, and failing there says nothing about
+# the program.
+has_temperatures = any(g.has_temperature for g in manager.gpus)
+if has_temperatures:
+    check("poll() still reports a GPU temperature",
+          isinstance(values.get("gpu0_temp"), float),
+          repr(values.get("gpu0_temp")))
+else:
+    print(f"    --  no card here reports a temperature, so there is none to "
+          f"check: {[(g.index, g.vendor, g.has_temperature) for g in manager.gpus]}")
+has_luids = any(g.luids for g in manager.gpus)
+if has_luids:
+    check("poll() still reports AMD utilisation for both cards",
+          all(isinstance(values.get(f"gpu{i}_util"), float) for i in (1, 2)),
+          repr([values.get(f"gpu{i}_util") for i in (1, 2)]))
+else:
+    print("    --  no card here publishes utilisation counters, so there is "
+          "nothing to check")
 manager.close()
 
 # --------------------------------------------------------------------------
