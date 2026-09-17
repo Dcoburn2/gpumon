@@ -37,16 +37,17 @@ BUILD = os.path.join(HERE, "dist", "gpumon")
 #: be set in the environment, so a package can be built for a reservation without
 #: editing this file.
 #:
-#: The display name is not the same thing as the publisher: Partner Center checks
-#: it against the *publisher display name* on the account, and a mismatch is a
-#: validation error that stops the submission. That is what happened the first
-#: time this package was uploaded, with "gpumon" against "Darrell Coburn".
-#: The reserved values, filled in from Partner Center -> Product identity. The
-#: environment can override any of them, so a second reservation does not need an
-#: edit here.
+#: Two mistakes have been made here, both worth knowing about. The display name is
+#: not the publisher: Partner Center checks it against the *publisher display name*
+#: on the account, and "gpumon" against "Darrell Coburn" was a validation error.
+#: And the publisher itself was transcribed from a screenshot by eye, which
+#: transposed two characters inside the GUID - the Store then rejected the package
+#: twice, once for the publisher and once for the family name derived from it.
+#: Copy it, never retype it, and prefer the environment variable so there is
+#: nothing to mistype.
 IDENTITY_NAME = os.environ.get("GPUMON_STORE_NAME", "DarrellCoburn.gpumon")
 IDENTITY_PUBLISHER = os.environ.get(
-    "GPUMON_STORE_PUBLISHER", "CN=06A6D4AF-FB98-47BA-9E8E-109FD6E9C76B")
+    "GPUMON_STORE_PUBLISHER", "CN=06A6D4AF-FB98-47BA-98E8-109FD69EC76B")
 IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
                                        "Darrell Coburn")
 #: The Store wants x.y.z.0 and refuses a version it has already seen, which is why
@@ -163,7 +164,13 @@ def set_store_mode(enabled: bool) -> None:
     This is what makes the answer to Partner Center's question about drivers a
     fact about the binary rather than a promise: with the flag set, the sensor
     setup path refuses in the packaged build even if the run-time package check
-    were unavailable. `make_release.py` sets it back for the portable build.
+    were unavailable.
+
+    The flag is a file on disk, so it has to be cleared by a later step - and a
+    `finally` does not run if the process is killed, which is exactly what
+    happened when this build's output was piped into `Select-Object -First`. A
+    portable build now clears it on the way in rather than trusting that the
+    previous Store build cleaned up after itself.
     """
     path = os.path.join(HERE, "storemode.py")
     text = open(path, encoding="utf-8").read()
@@ -175,8 +182,44 @@ def set_store_mode(enabled: bool) -> None:
     print(f"  storemode.IS_STORE_BUILD = {enabled}")
 
 
+def check_identity() -> list[str]:
+    """Complain about an identity that cannot be right, before the Store does.
+
+    The Store validates the publisher and the family name derived from it, and
+    rejects the package with a message. Failing here instead costs a second rather
+    than an upload cycle. This cannot verify the *values* - the family name hash is
+    Microsoft's own algorithm - so it checks the shapes and prints what it is about
+    to write, for comparing against Partner Center by eye.
+    """
+    import re
+
+    problems = []
+    if not re.fullmatch(r"CN=[0-9A-Fa-f-]{36}", IDENTITY_PUBLISHER):
+        problems.append(
+            f"publisher {IDENTITY_PUBLISHER!r} is not a CN= with a GUID in it. "
+            f"Copy it from Partner Center -> Product identity; do not retype it.")
+    if "." not in IDENTITY_NAME:
+        problems.append(f"name {IDENTITY_NAME!r} should look like Publisher.App")
+    if not re.fullmatch(r"\d+\.\d+\.\d+\.0", VERSION):
+        problems.append(f"version {VERSION!r} must be x.y.z.0")
+    if not IDENTITY_DISPLAY_NAME.strip():
+        problems.append("the publisher display name is empty")
+    print("  identity:")
+    print(f"    Name                  {IDENTITY_NAME}")
+    print(f"    Publisher             {IDENTITY_PUBLISHER}")
+    print(f"    PublisherDisplayName  {IDENTITY_DISPLAY_NAME}")
+    print(f"    Version               {VERSION}")
+    print(f"    family name           {IDENTITY_NAME}_<hash of the publisher>")
+    return problems
+
+
 def build_layout(no_sensor_setup: bool = False) -> bool:
     """Copy the built program into the folder that becomes the package."""
+    problems = check_identity()
+    if problems:
+        for problem in problems:
+            print(f"  ! {problem}")
+        return False
     if no_sensor_setup:
         # Rebuild with the setup path disabled, so the package physically cannot
         # install a driver. Costs a build, and buys a claim a reviewer can check.

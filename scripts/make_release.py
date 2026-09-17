@@ -36,8 +36,27 @@ if HERE not in sys.path:
 RELEASE_SCRIPT = "start-sensors.cmd"
 
 
+def clear_store_mode() -> None:
+    """Make sure this is not built as the Store package.
+
+    The flag is a file the Store build sets, and a killed process cannot clear it
+    in a `finally`. A portable release that inherited it would refuse its own
+    sensor setup - which is a strange way to find out the flag was left on.
+    """
+    path = os.path.join(HERE, "storemode.py")
+    if not os.path.exists(path):
+        return
+    text = open(path, encoding="utf-8").read()
+    if "IS_STORE_BUILD = True" in text:
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(text.replace("IS_STORE_BUILD = True",
+                                      "IS_STORE_BUILD = False"))
+        print("  cleared a leftover storemode.IS_STORE_BUILD")
+
+
 def build_executable() -> bool:
     """Run PyInstaller on the program, from the repository root."""
+    clear_store_mode()
     command = [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
         "--windowed", "--onedir", "--name", "gpumon",
