@@ -104,6 +104,10 @@ jobs:
           mkdir -p "package/$NAME"
           cp dist/gpumon "package/$NAME/gpumon"
           cp LICENSE README.md "package/$NAME/"
+          # The readme shows the program, so the pictures it points at travel with
+          # it. Both are guarded, because a rebuild of an older tag predates them.
+          if [ -f gpumon.png ]; then cp gpumon.png "package/$NAME/"; fi
+          if [ -d screenshots ]; then cp -r screenshots "package/$NAME/"; fi
           cat > "package/$NAME/README-LINUX.txt" <<'NOTE'
           gpumon for Linux
           ================
