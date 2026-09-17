@@ -27,6 +27,11 @@ def _skip_machine_specific_test() -> None:
         raise SystemExit(0)
 
 
+# The statistics it checks are computed from recorded samples, and a runner with
+# no GPU records almost none: the three checks about "stats cover the full run"
+# then fail for want of data rather than want of correctness.
+_skip_machine_specific_test()
+
 
 
 

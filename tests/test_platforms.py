@@ -533,7 +533,17 @@ print("\n[7] SensorManager on Windows, against the pre-change snapshot")
 manager = M.SensorManager(per_core=True)
 caps = manager.capabilities()
 rows = [(g.vendor, g.pci, g.name) for g in manager.gpus]
-eq("same GPU rows as before the change", rows, list(EXPECTED_GPUS))
+# The snapshot below is this machine's: three cards, with those addresses. On any
+# other machine it is not a regression, it is just a different computer - a build
+# runner enumerated "Microsoft Hyper-V Video" and failed a test that had nothing
+# to say about it. So the frozen list is applied where there are real cards to
+# compare against, and what is genuinely invariant is checked everywhere.
+snapshot_machine = any(vendor in ("nvidia", "amd") for vendor, _pci, _name in rows)
+if snapshot_machine:
+    eq("same GPU rows as before the change", rows, list(EXPECTED_GPUS))
+else:
+    print(f"    --  no discrete GPU here, so the recorded snapshot does not "
+          f"apply. This machine reports: {rows}")
 # These used to compare against a frozen list of everything this machine
 # produced while LibreHardwareMonitor happened to be failing, including "cpu_temp
 # is absent" and "the lhm backend is in error". They broke the moment the sensors
@@ -541,7 +551,13 @@ eq("same GPU rows as before the change", rows, list(EXPECTED_GPUS))
 # What is invariant is the base set, and that everything beyond it follows what
 # the backends report.
 keys = manager.metric_keys()
-missing = [key for key in EXPECTED_METRIC_KEYS if key not in keys]
+if snapshot_machine:
+    missing = [key for key in EXPECTED_METRIC_KEYS if key not in keys]
+else:
+    # Without the cards the snapshot describes, what must still be present is the
+    # set that needs no card at all.
+    missing = [key for key in ("cpu_util", "cpu_clock", "ram_used", "ram_percent")
+               if key not in keys]
 check("every key the platform guarantees is present", not missing, str(missing))
 check("cpu_temp appears exactly when a backend reports one",
       ("cpu_temp" in keys) == caps.cpu_temp,
