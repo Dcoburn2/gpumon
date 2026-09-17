@@ -1,0 +1,141 @@
+name: linux
+
+# Build and test on Linux, which has never been done.
+#
+# The program has a Linux side - sysfs for AMD cards, rocm-smi, /sys/class/thermal
+# and hwmon for CPU temperature - written against fixtures and never executed on a
+# kernel. This job is the first execution: it runs the suite, then builds the
+# binary, then attaches it to the release when the push is a tag.
+#
+# It is a separate workflow from `release` on purpose. A Linux failure must not
+# hold up the Windows release, and this needs to be runnable on every push to main
+# while it is being got right, rather than only on tags.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # The tests that measure this machine - a GPU, a vendor library, a desktop
+      # session - have nothing to measure on a runner, and stop with a note.
+      GPUMON_SKIP_MACHINE_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk
+          python -m pip install --upgrade pip
+          python -m pip install pyinstaller psutil pyyaml
+
+      - name: What this machine looks like
+        # Worth recording: it decides what the tests below can say anything about.
+        run: |
+          python -c "import platform, os; print('platform:', platform.platform()); print('machine:', platform.machine()); print('cpus:', os.cpu_count())"
+          ls /sys/class/drm 2>/dev/null | head -5 || echo "no /sys/class/drm"
+          ls /sys/class/thermal 2>/dev/null | head -3 || echo "no /sys/class/thermal"
+          python -c "import tkinter; print('tkinter:', tkinter.TkVersion)" || echo "no tkinter"
+
+      - name: Run the test suite
+        # Same shape as the Windows job: each test bounded, and a failure reported
+        # as an annotation carrying its own failing lines, because annotations can
+        # be read without a token and the log cannot.
+        run: |
+          failed=0
+          for test in dev/tests/test_*.py; do
+            name=$(basename "$test")
+            echo "== $name"
+            output=$(timeout 300 python "$test" 2>&1)
+            code=$?
+            echo "$output"
+            if [ $code -ne 0 ]; then
+              failed=1
+              why=$(echo "$output" | grep -E "FAIL|Error|Traceback" | head -4 | tr '\n' '|')
+              echo "::error title=$name::$why"
+            fi
+          done
+          python gpumon.py --selftest || failed=1
+          exit $failed
+        shell: bash
+
+      - name: Build the binary
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --name gpumon \
+            --add-data gpumon.png:. --add-data gpumon.ico:. \
+            --hidden-import psutil gpumon.py
+
+      - name: Package it as a tarball
+        # What a Linux user expects: a tarball with the binary, the licence and the
+        # readme, not a bare executable.
+        run: |
+          VERSION=$(python -c "import re,pathlib; print(re.search(r'APP_VERSION = \"([^\"]+)\"', pathlib.Path('sampler.py').read_text()).group(1))")
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          NAME="gpumon-${VERSION}-linux-x86_64"
+          mkdir -p "package/$NAME"
+          cp dist/gpumon "package/$NAME/gpumon"
+          cp LICENSE README.md "package/$NAME/"
+          tar -czf "${NAME}.tar.gz" -C package "$NAME"
+          sha256sum "${NAME}.tar.gz" > "${NAME}.tar.gz.sha256"
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          ls -la gpumon-*-linux-x86_64.tar.gz*
+          echo "--- the tarball contains:"
+          tar -tzf "${NAME}.tar.gz"
+
+      - name: Does the binary even start?
+        # The honest question. A one-file build unpacks itself; if it cannot find
+        # its interpreter or its Tk it fails immediately, and better here than on
+        # somebody's machine.
+        run: |
+          set +e
+          timeout 25 ./dist/gpumon --selftest > selftest.txt 2>&1
+          code=$?
+          cat selftest.txt
+          echo "exit code: $code"
+          if [ $code -ne 0 ]; then
+            echo "::warning title=Linux binary::--selftest exited $code; see the log"
+          fi
+        continue-on-error: true
+
+      - name: Upload the artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpumon-linux-x86_64
+          path: |
+            gpumon-*-linux-x86_64.tar.gz
+            gpumon-*-linux-x86_64.tar.gz.sha256
+            selftest.txt
+
+      - name: Attach them to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            gpumon-*-linux-x86_64.tar.gz
+            gpumon-*-linux-x86_64.tar.gz.sha256
+          body: |
+            The Linux build is new and honest about what it is: **built and tested
+            on a Linux runner with no graphics card**, so the GPU readers have never
+            been exercised against real hardware. CPU, memory and the interface are
+            tested; the AMD sysfs and rocm-smi paths are not.
+
+            ```sh
+            tar -xzf gpumon-*-linux-x86_64.tar.gz
+            cd gpumon-*-linux-x86_64
+            ./gpumon            # desktop window (needs Tk)
+            ./gpumon tui        # terminal view, no toolkit needed
+            ./gpumon web        # browser interface
+            ```
