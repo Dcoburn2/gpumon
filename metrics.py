@@ -1062,6 +1062,11 @@ class AcpiThermalZoneBackend:
 
     def poll(self) -> dict[str, float]:
         if os.name != "nt":
+            # Say why, here as well as in available(): an unavailable backend that
+            # answers with a silent empty dict cannot be told apart from one that
+            # looked and found nothing, which is what a Linux run of the suite
+            # reported.
+            self.error = "Windows only (Linux reads hwmon instead)"
             return {}
         try:
             import wmi  # noqa: PLC0415

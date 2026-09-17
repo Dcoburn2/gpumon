@@ -159,8 +159,11 @@ root.withdraw()
 applied = gpumon._apply_window_icon(root)
 root.update()
 check("icon applied", bool(applied), os.path.basename(applied) if applied else "")
-check("icon is the .ico on Windows and a .png elsewhere", applied.endswith(".ico"),
-      os.path.basename(applied))
+# A .ico is a Windows thing; elsewhere the window takes the PNG. What matters is
+# that *some* icon was applied, and that it is the right kind for the platform.
+wanted_icon = ".ico" if os.name == "nt" else ".png"
+check(f"icon is the {wanted_icon} this platform uses",
+      applied.endswith(wanted_icon), os.path.basename(applied))
 root.destroy()
 
 print("\n[6] terminal view starts and stops cleanly")

@@ -143,11 +143,16 @@ print("\n[3] logging a 20 s run under external CPU load")
 sid = sampler.start_logging(label="acceptance run")
 sampler.mark("load started")
 
-ps_cmd = ("$end=(Get-Date).AddSeconds(24); $x=0.0; "
-          "while((Get-Date) -lt $end){ $x += [math]::Sqrt([math]::PI) * 1.000001 }")
-procs = [subprocess.Popen(["powershell", "-NoProfile", "-Command", ps_cmd],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                          creationflags=0x08000000) for _ in range(6)]
+# A busy loop to load the machine while the window is measured. Python rather
+# than PowerShell, so the test means the same thing on Linux - and with the
+# creationflags keyword left out off Windows, where subprocess refuses it.
+hog = [sys.executable, "-c",
+       "import time\nend = time.time() + 24\nx = 0.0\n"
+       "while time.time() < end:\n    x += 1.0"]
+spawn_kwargs = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+if os.name == "nt":
+    spawn_kwargs["creationflags"] = 0x08000000
+procs = [subprocess.Popen(hog, **spawn_kwargs) for _ in range(6)]
 
 max_gap = 0.0
 last = time.monotonic()

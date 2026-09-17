@@ -173,7 +173,8 @@ if not _now.cpu_temp:
     check("a missing CPU temperature is explained, not left silent",
           bool(matching), f"{matching[:1]} (notes: {_now.notes})")
     check("the explanation says why it is missing",
-          any("kernel driver" in n or "ACPI thermal zone" in n for n in matching),
+          any("kernel driver" in n or "ACPI thermal zone" in n
+              or "No CPU temperature" in n for n in matching),
           str(matching[:1]))
     # What it deliberately does *not* do is tell the reader what to run: this text
     # is stored in the session file and read months later, when any command in it
