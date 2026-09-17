@@ -41,11 +41,17 @@ BUILD = os.path.join(HERE, "dist", "gpumon")
 #: it against the *publisher display name* on the account, and a mismatch is a
 #: validation error that stops the submission. That is what happened the first
 #: time this package was uploaded, with "gpumon" against "Darrell Coburn".
-IDENTITY_NAME = os.environ.get("GPUMON_STORE_NAME", "gpumon.gpumon")
-IDENTITY_PUBLISHER = os.environ.get("GPUMON_STORE_PUBLISHER", "CN=gpumon")
+#: The reserved values, filled in from Partner Center -> Product identity. The
+#: environment can override any of them, so a second reservation does not need an
+#: edit here.
+IDENTITY_NAME = os.environ.get("GPUMON_STORE_NAME", "DarrellCoburn.gpumon")
+IDENTITY_PUBLISHER = os.environ.get(
+    "GPUMON_STORE_PUBLISHER", "CN=06A6D4AF-FB98-47BA-9E8E-109FD6E9C76B")
 IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
                                        "Darrell Coburn")
-VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.0.0")
+#: The Store wants x.y.z.0 and refuses a version it has already seen, which is why
+#: the re-upload after the first validation failure is 1.0.1.0 rather than 1.0.0.0.
+VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.1.0")
 
 #: Tile sizes Microsoft requires, and the background the tiles are drawn on -
 #: the default theme's panel colour, so the Store listing looks like the program.

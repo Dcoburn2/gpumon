@@ -27,6 +27,11 @@ RELEASE = os.path.join(HERE, "release")
 SINGLE = os.path.join(HERE, "release-onefile")
 BUILD = os.path.join(HERE, "dist", "gpumon")
 
+# The program's modules are at the root, so the name in the archive comes from the
+# program itself rather than from a string here that goes stale at every version.
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
 #: Copied into the release folder, and nothing else.
 RELEASE_SCRIPT = "start-sensors.cmd"
 
@@ -144,11 +149,21 @@ def write_checksums() -> int:
     return 0
 
 
+def archive_name() -> str:
+    """The zip's name, taken from the program's own version.
+
+    It used to be spelled out in three places, so a version bump meant finding all
+    three or shipping a file named after the previous release.
+    """
+    import sampler
+    return f"gpumon-{sampler.APP_VERSION}-windows-x64.zip"
+
+
 def checksum_zip() -> int:
     """A `.sha256` beside the zip, in the form `sha256sum -c` reads."""
     import signing
 
-    archive = os.path.join(HERE, "gpumon-1.0.0-windows-x64.zip")
+    archive = os.path.join(HERE, archive_name())
     if not os.path.exists(archive):
         return 0
     target = archive + ".sha256"
@@ -189,7 +204,7 @@ def assemble_single_file() -> int:
 
 def make_zip() -> int:
     """A zip of the folder build: what a download link wants."""
-    target = os.path.join(HERE, "gpumon-1.0.0-windows-x64.zip")
+    target = os.path.join(HERE, archive_name())
     if os.path.exists(target):
         os.remove(target)
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as bundle:
@@ -240,6 +255,8 @@ exit /b 0
 def write_release_readme(directory: str | None = None,
                          single_file: bool = False) -> None:
     """The readme a downloader gets. Two shapes, so two sets of instructions."""
+    import sampler
+
     target = os.path.join(directory or RELEASE, "README.md")
     running = (
         "Double-click **`gpumon.exe`**. It is one file: put it wherever you like,\n"
@@ -254,7 +271,7 @@ def write_release_readme(directory: str | None = None,
         "want it somewhere else, move the entire folder.\n"
     )
     with open(target, "w", encoding="utf-8", newline="\r\n") as handle:
-        handle.write("""# gpumon
+        handle.write(f"""# gpumon
 
 A live monitor and logger for GPUs and the rest of the machine: utilisation,
 temperature, hotspot, VRAM, clocks, power and fan for every graphics card, plus
@@ -263,7 +280,7 @@ back through history.
 
 ![gpumon](gpumon.png)
 
-Version 1.0.0.
+Version {sampler.APP_VERSION}.
 
 ## What you need
 

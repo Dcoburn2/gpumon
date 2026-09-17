@@ -40,7 +40,7 @@ python scripts/make_release.py --all      # every artifact, from one source tree
 | Artifact | Size | Start-up | For |
 |---|---|---|---|
 | `release/` | 30.1 MB folder | 3.3 s to a window | the normal download |
-| `gpumon-1.0.0-windows-x64.zip` | 14.9 MB | — | a download link |
+| `gpumon-1.0.1-windows-x64.zip` | 14.9 MB | — | a download link |
 | `release-onefile/gpumon.exe` | 14.6 MB, one file | 3.7 s to a window | handing somebody a single file |
 
 Measured on this machine, best of three, from launch to a visible window. The

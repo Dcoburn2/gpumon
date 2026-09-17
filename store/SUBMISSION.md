@@ -148,9 +148,12 @@ package can be built for a reservation without editing code:
 $env:GPUMON_STORE_NAME = "…"            # Product identity -> Package/Identity/Name
 $env:GPUMON_STORE_PUBLISHER = "CN=…"    # Product identity -> Package/Identity/Publisher
 $env:GPUMON_STORE_DISPLAY_NAME = "…"    # your publisher display name
-$env:GPUMON_STORE_VERSION = "1.0.0.0"   # x.y.z.0
+$env:GPUMON_STORE_VERSION = "1.0.1.0"   # x.y.z.0, and it must go up each time
 python scripts/make_store_package.py
 ```
+
+The reserved values are the defaults in that script now, so a plain
+`python scripts/make_store_package.py` builds the package for this listing.
 
 The package does not need signing first: the Store re-signs it after
 certification, which is the whole reason this route costs nothing.

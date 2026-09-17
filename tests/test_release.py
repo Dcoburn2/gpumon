@@ -89,7 +89,11 @@ for folder in FOLDERS:
         check("and the hash matches", actual == digest,
               f"{actual[:16]}… vs {digest[:16]}…")
 
-archive = "gpumon-1.0.0-windows-x64.zip"
+# Taken from the program's own version rather than written down, so a version bump
+# does not leave this test looking for the previous release's file.
+import make_release  # noqa: E402  (scripts/ is on the path from the bootstrap)
+
+archive = make_release.archive_name()
 print(f"\n[{archive}]")
 sidecar = archive + ".sha256"
 check("a sidecar checksum exists", os.path.exists(sidecar))
