@@ -188,6 +188,39 @@ def archive_name() -> str:
     return f"gpumon-{sampler.APP_VERSION}-windows-x64.zip"
 
 
+def single_name() -> str:
+    """The single-file build's name, versioned the same way.
+
+    It is the same program as the zip - one executable instead of a folder - so it
+    is published beside it with a name that says which release it belongs to. A
+    bare `gpumon.exe` as a release asset would not.
+    """
+    import sampler
+    return f"gpumon-{sampler.APP_VERSION}-windows-x64.exe"
+
+
+def publish_single_file() -> int:
+    """Put the single-file build where the release can pick it up.
+
+    Copied out of its folder to the root, beside the zip, so both downloads sit
+    together and both have a `.sha256` naming the file it describes.
+    """
+    import shutil
+
+    import signing
+
+    source = os.path.join(SINGLE, "gpumon.exe")
+    if not os.path.exists(source):
+        return 0
+    target = os.path.join(HERE, single_name())
+    shutil.copy2(source, target)
+    with open(target + ".sha256", "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(signing.checksums([target]))
+    print(f"  published {os.path.basename(target)} "
+          f"({os.path.getsize(target) / 1024 / 1024:.1f} MB)")
+    return 0
+
+
 def checksum_zip() -> int:
     """A `.sha256` beside the zip, in the form `sha256sum -c` reads."""
     import signing
@@ -496,4 +529,8 @@ if __name__ == "__main__":
         code = make_zip()
     if code == 0:
         code = checksum_zip()
+    if code == 0:
+        # The single-file build, out beside the zip so the release can pick up
+        # both downloads. Signed above, so its checksum covers the signed bytes.
+        code = publish_single_file()
     raise SystemExit(code)

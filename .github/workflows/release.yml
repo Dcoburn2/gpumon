@@ -145,22 +145,32 @@ jobs:
           # archive - so anyone who verified the download against it got a
           # mismatch and concluded the download was corrupt. A checksum has to
           # describe the file it is published beside.
+          #
+          # The single-file build is published too: the same program as one
+          # executable, for anyone who would rather not unpack a folder.
           files: |
             gpumon-*-windows-x64.zip
             gpumon-*-windows-x64.zip.sha256
+            gpumon-*-windows-x64.exe
+            gpumon-*-windows-x64.exe.sha256
           body: |
-            Windows 10/11, 64-bit. No installer: unzip and run `gpumon.exe`.
+            Windows 10/11, 64-bit. Two downloads, the same program:
 
-            `gpumon-<version>-windows-x64.zip.sha256` holds the SHA-256 of the zip,
-            so a download can be checked:
+            * **`gpumon-<version>-windows-x64.zip`** — unzip it and run
+              `gpumon.exe`. Starts immediately; keep the folder together.
+            * **`gpumon-<version>-windows-x64.exe`** — one file, put it anywhere
+              and run it. It unpacks itself at each start, which costs about half
+              a second.
+
+            Each has a `.sha256` beside it holding that file's SHA-256:
 
             ```powershell
-            (Get-FileHash .\gpumon-1.0.4-windows-x64.zip -Algorithm SHA256).Hash
+            (Get-FileHash .\gpumon-1.0.5-windows-x64.exe -Algorithm SHA256).Hash
             ```
 
-            Inside the archive, `SHA256SUMS.txt` does the same for `gpumon.exe`
-            once it is unzipped.
+            Inside the zip, `SHA256SUMS.txt` does the same for the `gpumon.exe`
+            within it, once unzipped.
 
-            The build is not code-signed, so Windows will show a
+            Neither download is code-signed, so Windows will show a
             "Windows protected your PC" notice the first time — *More info →
             Run anyway*.

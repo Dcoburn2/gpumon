@@ -117,10 +117,16 @@ print(f"    release files: {published}")
 check("the zip is published", any("zip" in name for name in published))
 check("the zip's own checksum is published",
       any(name.endswith(".zip.sha256") for name in published), str(published))
+check("the single-file build is published",
+      any(name.endswith(".exe") for name in published), str(published))
+check("and its checksum as well",
+      any(name.endswith(".exe.sha256") for name in published), str(published))
 check("the checksum of a file inside the archive is not published as the "
       "release's checksum",
       not any(name.endswith("SHA256SUMS.txt") for name in published),
       "that file describes gpumon.exe, not the zip")
+check("the release body describes both downloads",
+      "one file" in text.lower() or "single" in text.lower())
 
 print("\n[5] it does not sign with a key from the repository")
 check("no certificate or password is committed",
