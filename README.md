@@ -1,5 +1,7 @@
 # gpumon
 
+**Windows 10/11, 64-bit. [Download the latest release](https://github.com/Dcoburn2/gpumon/releases/latest) — no installer, no Python, no drivers.**
+
 A live monitor and logger for GPUs and the rest of the machine: utilisation,
 temperature, hotspot, VRAM, clocks, power and fan for every graphics card, plus
 CPU load, CPU memory, per-core activity and system memory, with graphs that scroll
@@ -9,16 +11,25 @@ back through history.
 
 ## Download
 
-**[The latest release](https://github.com/Dcoburn2/gpumon/releases/latest)** has two
-downloads, the same program either way:
+Two files, the same program either way. On the
+[releases page](https://github.com/Dcoburn2/gpumon/releases/latest), take the one
+that ends in `.zip` or `.exe`:
 
 | Download | What it is |
 |---|---|
 | `gpumon-<version>-windows-x64.zip` | Unzip it and run `gpumon.exe`. Starts immediately; keep the folder together. |
 | `gpumon-<version>-windows-x64.exe` | One file, put it anywhere and run it. Unpacks itself at each start, which costs about half a second. |
 
-Each has a `.sha256` beside it holding that file's checksum, if you want to verify
-the download.
+> **Ignore the two files called "Source code".** GitHub adds those to every release
+> automatically. They are the program's source, not the program, and they will not
+> run.
+
+Each download has a `.sha256` beside it holding that file's checksum, if you want
+to check what you got:
+
+```powershell
+(Get-FileHash .\gpumon-1.0.5-windows-x64.zip -Algorithm SHA256).Hash
+```
 
 Windows may show a "Windows protected your PC" notice the first time, because the
 build is not code-signed. *More info → Run anyway*.
