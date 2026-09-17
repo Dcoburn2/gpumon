@@ -52,9 +52,9 @@ IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
                                        "Darrell Coburn")
 #: The Store wants x.y.z.0 and refuses a version it has already seen. Each upload
 #: therefore needs one: 1.0.0.0 was the first attempt, 1.0.1.0 the second, 1.0.2.0
-#: carried the processor name, and 1.0.3.0 adds the chart resizing, the hover
-#: readout and the per-core label.
-VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.3.0")
+#: carried the processor name, 1.0.3.0 the chart resizing and hover readout, and
+#: 1.0.4.0 the corrected release checksum.
+VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.4.0")
 
 #: Tile sizes Microsoft requires, and the background the tiles are drawn on -
 #: the default theme's panel colour, so the Store listing looks like the program.

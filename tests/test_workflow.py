@@ -100,8 +100,27 @@ check("the signing step is conditional", "if: env." in text,
 check("an unsigned build is announced", "::warning::" in text)
 check("and the release body says so",
       "not code-signed" in text or "unsigned" in text.lower())
-check("the checksums are published",
-      "SHA256SUMS" in text)
+check("the checksums are published", "sha256" in text.lower())
+
+print("\n[4b] and the published checksum describes the published file")
+# It published release/SHA256SUMS.txt, which is the checksum of gpumon.exe *inside*
+# the archive. Anyone verifying the download against it got a mismatch and
+# concluded the download was corrupt, which is worse than publishing nothing.
+published = []
+if parsed is not None:
+    for step in parsed["jobs"]["windows"]["steps"]:
+        files = (step.get("with") or {}).get("files")
+        if files:
+            published = [line.strip() for line in files.splitlines()
+                         if line.strip()]
+print(f"    release files: {published}")
+check("the zip is published", any("zip" in name for name in published))
+check("the zip's own checksum is published",
+      any(name.endswith(".zip.sha256") for name in published), str(published))
+check("the checksum of a file inside the archive is not published as the "
+      "release's checksum",
+      not any(name.endswith("SHA256SUMS.txt") for name in published),
+      "that file describes gpumon.exe, not the zip")
 
 print("\n[5] it does not sign with a key from the repository")
 check("no certificate or password is committed",
