@@ -92,6 +92,45 @@ def identify() -> CpuIdentity:
     return identity
 
 
+_name_cache: str | None = None
+
+
+def processor_name() -> str:
+    """The processor's marketing name, for showing to a person.
+
+    `identify()` gets this from the registry, which is the cheapest and most
+    reliable source on Windows, and that is what the interface now shows. It is
+    not, however, the only source: a virtual machine, a locked-down registry or a
+    processor Windows does not describe can leave it blank, and the card then said
+    nothing at all about the processor. So it falls back, in order, to Python's
+    own answer and then to whatever WMI reports.
+
+    Cached: this is called while drawing the window, and the answer does not change
+    while the program runs.
+    """
+    global _name_cache
+    if _name_cache is not None:
+        return _name_cache
+
+    name = identify().name.strip()
+    if not name:
+        try:
+            import platform
+            name = (platform.processor() or "").strip()
+        except Exception:  # noqa: BLE001
+            name = ""
+    if not name or name.lower() in ("x86", "x86_64", "amd64"):
+        try:
+            import wmi                                    # type: ignore
+            rows = wmi.WMI().Win32_Processor()
+            if rows:
+                name = (rows[0].Name or "").strip()
+        except Exception:  # noqa: BLE001 - WMI is optional everywhere else too
+            pass
+    _name_cache = name or "unknown processor"
+    return _name_cache
+
+
 @dataclass
 class CpuReadings:
     """One poll of the processor's own sensors."""

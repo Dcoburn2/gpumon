@@ -36,27 +36,37 @@ if HERE not in sys.path:
 RELEASE_SCRIPT = "start-sensors.cmd"
 
 
-def clear_store_mode() -> None:
-    """Make sure this is not built as the Store package.
+def set_store_mode(enabled: bool) -> None:
+    """State in the source what kind of build this is, before PyInstaller runs.
 
-    The flag is a file the Store build sets, and a killed process cannot clear it
-    in a `finally`. A portable release that inherited it would refuse its own
-    sensor setup - which is a strange way to find out the flag was left on.
+    The flag is baked into the executable, so it has to be right *before* the
+    build rather than adjusted afterwards. `--store` sets it; anything else clears
+    it, which also protects against a leftover: the Store packaging clears it in a
+    `finally`, and a killed process does not run a `finally`.
+
+    Clearing it unconditionally was wrong in the other direction - it silently
+    rebuilt the Store package as a portable one, and the test that asks the
+    packaged build to refuse the sensor setup caught that.
     """
     path = os.path.join(HERE, "storemode.py")
     if not os.path.exists(path):
         return
     text = open(path, encoding="utf-8").read()
-    if "IS_STORE_BUILD = True" in text:
-        with open(path, "w", encoding="utf-8") as handle:
-            handle.write(text.replace("IS_STORE_BUILD = True",
-                                      "IS_STORE_BUILD = False"))
-        print("  cleared a leftover storemode.IS_STORE_BUILD")
+    wanted = "IS_STORE_BUILD = True" if enabled else "IS_STORE_BUILD = False"
+    current = ("IS_STORE_BUILD = True" if "IS_STORE_BUILD = True" in text
+               else "IS_STORE_BUILD = False")
+    if current == wanted:
+        return
+    import re
+    text = re.sub(r"IS_STORE_BUILD = (True|False)", wanted, text)
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    print(f"  storemode.IS_STORE_BUILD = {enabled}")
 
 
-def build_executable() -> bool:
+def build_executable(store: bool = False) -> bool:
     """Run PyInstaller on the program, from the repository root."""
-    clear_store_mode()
+    set_store_mode(store)
     command = [
         sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
         "--windowed", "--onedir", "--name", "gpumon",
@@ -464,8 +474,12 @@ def assemble() -> int:
 
 if __name__ == "__main__":
     wanted_single = "--onefile" in sys.argv or "--all" in sys.argv
-    if "--build" in sys.argv or "--all" in sys.argv or not os.path.isdir(BUILD):
-        if not build_executable():
+    # --store builds the program the Store package needs: identical except that it
+    # refuses to install the sensor driver, which is the claim made to Microsoft.
+    store = "--store" in sys.argv
+    if store or "--build" in sys.argv or "--all" in sys.argv \
+            or not os.path.isdir(BUILD):
+        if not build_executable(store=store):
             raise SystemExit(1)
     code = assemble()
     if wanted_single and code == 0:

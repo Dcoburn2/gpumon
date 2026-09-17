@@ -1092,6 +1092,18 @@ class MonitorApp:
         left.grid(row=0, column=0, rowspan=2, sticky="nsw", padx=(10, 6), pady=6)
         tk.Label(left, text="cpu / memory", bg=W.PANEL, fg=W.TEXT_BRIGHT,
                  font=t.bold, anchor="w").pack(anchor="w")
+        # The processor by name. The card header said only "cpu / memory" before,
+        # so a machine with an AMD processor looked the same as one with no name
+        # at all - there was nothing to be missing.
+        try:
+            import cpusensors
+            self.processor_label = tk.Label(
+                left, text=cpusensors.processor_name(), bg=W.PANEL,
+                fg=W.TEXT, font=t.small, anchor="w", justify="left",
+                wraplength=240)
+            self.processor_label.pack(anchor="w")
+        except Exception:  # noqa: BLE001 - a name is not worth failing to draw for
+            self.processor_label = None
         self.cpu_info = tk.Label(left, text="", bg=W.PANEL, fg=W.TEXT_DIM,
                                  font=t.tiny, anchor="w", justify="left",
                                  wraplength=240)
@@ -1687,11 +1699,22 @@ class MonitorApp:
             self.system_values["cpu_temp"].configure(
                 text=f"{cpu_temp:.1f} C", fg=_temp_color(cpu_temp, 100.0))
         else:
-            # Name the missing piece rather than pointing at a notes list: the
-            # answer is always the same one (LibreHardwareMonitor's WMI
-            # provider), and "n/a" alone reads like gpumon cannot do it.
-            self.system_values["cpu_temp"].configure(
-                text="n/a - needs LibreHardwareMonitor", fg=W.TEXT_DIM)
+            # Say what is actually wrong, which is one of three things. This used
+            # to read "needs LibreHardwareMonitor" - a program the CPU temperature
+            # has not gone through for a long time, so the label was naming
+            # something the user had never installed and could not install.
+            import sensorsetup
+            if sensorsetup.setup_marker() and os.path.exists(
+                    sensorsetup.setup_marker()):
+                # Setup has run, so the helper exists; it is simply not publishing.
+                age = sensorsetup.reading_age()
+                hint = ("n/a - helper not running" if age > 30
+                        else "n/a - waiting for the helper")
+            elif apppaths.is_packaged():
+                hint = "n/a - see the portable build"
+            else:
+                hint = "n/a - press START SENSORS"
+            self.system_values["cpu_temp"].configure(text=hint, fg=W.TEXT_DIM)
 
         cpu_lines = [f"{self.manager.system.psutil.cpu_count(logical=False) if self.manager.system.psutil else '?'} cores / "
                      f"{self.manager.system.psutil.cpu_count() if self.manager.system.psutil else '?'} threads"]

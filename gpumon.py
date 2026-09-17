@@ -264,13 +264,13 @@ def _resolve_subcommands(args: argparse.Namespace,
             if index + 1 >= len(extra):
                 print("Which session?  Usage:  gpumon report NUMBER", file=sys.stderr)
                 print('Run "gpumon list" to see the session ids.', file=sys.stderr)
-                return 1, []
+                return finish(1), []
             try:
                 args.report = int(extra[index + 1])
             except ValueError:
                 print(f"report needs a session number, not {extra[index + 1]!r}",
                       file=sys.stderr)
-                return 1, []
+                return finish(1), []
             index += 1
         else:
             rest.append(word)
@@ -660,48 +660,94 @@ def _apply_window_icon(root) -> str:
 def _msr_probe() -> int:
     """Read the CPU's own sensors through the driver, and say what happened.
 
-    This is the direct path that replaces LibreHardwareMonitor: identify the
-    processor, load the signed module into the PawnIO driver, read the registers.
-    Run it elevated - opening a kernel driver is the one step no user-mode process
-    can do for itself.
+    This is the direct path: identify the processor, load the signed module into
+    the PawnIO driver, read the registers. Run it elevated - opening a kernel
+    driver is the one step no user-mode process can do for itself.
+
+    Everything it prints is also written to `msr-probe.txt` beside the settings,
+    because the packaged build is a windowed program with no console: running it
+    from a prompt appears to do nothing at all, and the report is the whole point
+    of the command. On a machine whose processor is not being read - an AMD one,
+    say - that file is what to send.
     """
     import cpusensors
 
+    lines: list[str] = []
+
+    def say(text: str = "") -> None:
+        # This one really is a print: everything else in the probe goes through
+        # say(), and saying it here would be the shortest infinite loop going.
+        print(text)
+        lines.append(text)
+
+    def finish(code: int) -> int:
+        """Write the report and return, on every path out of here.
+
+        The two failure paths are the ones a person actually hits - not elevated,
+        or the driver not installed - and they were the two that returned without
+        writing anything. The report exists precisely for those cases.
+        """
+        try:
+            import apppaths
+            report = apppaths.state_path("msr-probe.txt")
+            with open(report, "w", encoding="utf-8") as handle:
+                handle.write("\n".join(lines) + "\n")
+            print(f"\n  written to {report}")
+        except OSError as exc:
+            print(f"\n  could not write the report: {exc}")
+        return code
+
     identity = cpusensors.identify()
-    print("=" * 78)
-    print("CPU SENSOR PROBE (direct register access)")
-    print("=" * 78)
-    print(f"  processor     : {identity.name or 'unknown'}")
-    print(f"  {identity.describe()}")
-    print(f"  logical cores : {identity.cores}")
-    print(f"  decoding path : {'yes' if identity.supported_by_us else 'no'}")
+    say("=" * 78)
+    say("CPU SENSOR PROBE (direct register access)")
+    say("=" * 78)
+    say(f"  processor     : {identity.name or 'unknown'}")
+    say(f"  {identity.describe()}")
+    say(f"  logical cores : {identity.cores}")
+    say(f"  decoding path : {'yes' if identity.supported_by_us else 'no'}")
 
     import pawnio
-    print(f"  PawnIO driver : {'installed' if pawnio.driver_installed() else 'not installed'}")
+    say(f"  PawnIO driver : {'installed' if pawnio.driver_installed() else 'not installed'}")
     with pawnio.PawnIO() as pawn:
         if not pawn.open():
-            print(f"\n  {pawn.error}")
-            print("\n  Run this from an elevated prompt: the driver device can only "
+            say(f"\n  {pawn.error}")
+            say("\n  Run this from an elevated prompt: the driver device can only "
                   "be opened by an administrator.")
-            return 1
-        print("  device opened : yes")
+            return finish(1)
+        say("  device opened : yes")
+        if identity.vendor == "amd":
+            say("  AMD modules   : " + ", ".join(
+                f"{name}{' present' if os.path.exists(pawnio.module_path(name)) else ' MISSING'}"
+                for name in cpusensors.AMD_MODULES))
         readings = cpusensors.read_cpu(pawn)
+        if identity.vendor == "amd":
+            # The raw register, before any decoding: if this is the failure, the
+            # value says so at a glance.
+            import msr
+            raw = pawn.read_smn(msr.AMD_THM_TCON_CUR_TMP)
+            say(f"  SMN {msr.AMD_THM_TCON_CUR_TMP:#010x} : "
+                f"{'no answer' if raw is None else hex(raw)}"
+                f"{'' if raw is None else f'  -> {msr.parse_amd_temperature(raw)} C'}")
+            say(f"  AMD offset    : {msr.amd_tctl_offset(identity.name):+.0f} C"
+                f"  (for {identity.name!r})")
+            if raw is None:
+                say(f"  SMN error     : {pawn.error or 'the module returned nothing'}")
 
     if readings.error:
-        print(f"\n  {readings.error}")
+        say(f"\n  {readings.error}")
         return 1
-    print(f"\n  TjMax         : {readings.tjmax:.0f} C")
-    print(f"  CPU package   : {readings.package} C")
+    say(f"\n  TjMax         : {readings.tjmax:.0f} C")
+    say(f"  CPU package   : {readings.package} C")
     cores = readings.per_core
     if cores:
         shown = ", ".join("n/a" if c is None else f"{c:.0f}"
                           for c in cores[:12])
-        print(f"  per-core      : {shown}")
-        print(f"  hottest core  : {readings.hottest()} C")
+        say(f"  per-core      : {shown}")
+        say(f"  hottest core  : {readings.hottest()} C")
     if readings.frequency_mhz:
-        print(f"  frequency     : {readings.frequency_mhz:.0f} MHz")
+        say(f"  frequency     : {readings.frequency_mhz:.0f} MHz")
     if readings.voltage:
-        print(f"  core voltage  : {readings.voltage:.3f} V")
+        say(f"  core voltage  : {readings.voltage:.3f} V")
 
     # Cross-check against whatever else can report a CPU temperature, so a
     # decoding mistake shows up as a disagreement rather than as a number nobody
@@ -716,7 +762,7 @@ def _msr_probe() -> int:
         manager = M.SensorManager(per_core=False)
         manager.prime()
         time.sleep(0.5)
-        print("\n  paired samples (ours vs the sensor server, same moment):")
+        say("\n  paired samples (ours vs the sensor server, same moment):")
 
         def server_temperatures() -> dict[str, float]:
             """LibreHardwareMonitor's temperature sensors, by name.
@@ -767,11 +813,11 @@ def _msr_probe() -> int:
                    for _ in range(max(2, (os.cpu_count() or 4) // 2))]
         for worker in workers:
             worker.start()
-        print(f"    holding {len(workers)} threads busy for 26s...")
+        say(f"    holding {len(workers)} threads busy for 26s...")
         time.sleep(9.0)                     # let the temperature plateau
         with pawnio.PawnIO() as pawn:
             if not pawn.load_module_file(pawnio.module_path(CS.INTEL_MODULE)):
-                print(f"    could not reopen the module: {pawn.error}")
+                say(f"    could not reopen the module: {pawn.error}")
             else:
                 deltas = []
                 for _ in range(6):
@@ -782,24 +828,24 @@ def _msr_probe() -> int:
                     core_zero = reading.per_core[0] if reading.per_core else None
                     if reading.package is not None and package is not None:
                         deltas.append(reading.package - package)
-                    print(f"    package: ours {reading.package} C   "
+                    say(f"    package: ours {reading.package} C   "
                           f"theirs {package} C    |    core 1: ours {core_zero} C"
                           f"   theirs {first_core} C")
                     time.sleep(1.0)
                 if deltas:
                     worst = max(abs(d) for d in deltas)
                     average = sum(deltas) / len(deltas)
-                    print(f"    package: mean difference {average:+.1f} C, "
+                    say(f"    package: mean difference {average:+.1f} C, "
                           f"largest {worst:.1f} C")
-                    print("    -> " + ("they agree" if worst <= 2.0 else
+                    say("    -> " + ("they agree" if worst <= 2.0 else
                                        "THEY DISAGREE - the decoding needs a look"))
         stop = time.monotonic()           # release the spinners
         for worker in workers:
             worker.join(timeout=1.0)
         manager.close()
     except Exception as exc:  # noqa: BLE001
-        print(f"\n  (no comparison available: {exc})")
-    return 0
+        say(f"\n  (no comparison available: {exc})")
+    return finish(0)
 
 
 def _sensor_helper(argv: list[str]) -> int:

@@ -19,7 +19,7 @@ import alarms as A
 import metrics as M
 import store as S
 
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 
 # How much history the live view keeps for its scrolling graphs.
 LIVE_WINDOW_SECONDS = 180.0

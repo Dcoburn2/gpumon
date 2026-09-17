@@ -1,0 +1,12 @@
+==============================================================================
+CPU SENSOR PROBE (direct register access)
+==============================================================================
+  processor     : Intel(R) Core(TM) i9-7900X CPU @ 3.30GHz
+  Intel family 6 model 85 stepping 4
+  logical cores : 20
+  decoding path : yes
+  PawnIO driver : installed
+
+  could not open \\?\GLOBALROOT\Device\PawnIO (Windows error 5: Access is denied.) - this needs administrator rights
+
+  Run this from an elevated prompt: the driver device can only be opened by an administrator.

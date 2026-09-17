@@ -50,9 +50,10 @@ IDENTITY_PUBLISHER = os.environ.get(
     "GPUMON_STORE_PUBLISHER", "CN=06A6D4AF-FB98-47BA-98E8-109FD69EC76B")
 IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
                                        "Darrell Coburn")
-#: The Store wants x.y.z.0 and refuses a version it has already seen, which is why
-#: the re-upload after the first validation failure is 1.0.1.0 rather than 1.0.0.0.
-VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.1.0")
+#: The Store wants x.y.z.0 and refuses a version it has already seen. Each upload
+#: therefore needs one: 1.0.0.0 was the first attempt, 1.0.1.0 the second, and
+#: 1.0.2.0 carries the processor name and the corrected sensor hint.
+VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.2.0")
 
 #: Tile sizes Microsoft requires, and the background the tiles are drawn on -
 #: the default theme's panel colour, so the Store listing looks like the program.
@@ -221,14 +222,16 @@ def build_layout(no_sensor_setup: bool = False) -> bool:
             print(f"  ! {problem}")
         return False
     if no_sensor_setup:
-        # Rebuild with the setup path disabled, so the package physically cannot
-        # install a driver. Costs a build, and buys a claim a reviewer can check.
-        set_store_mode(True)
+        # Rebuild as the Store program, with the setup path disabled, so the
+        # package physically cannot install a driver. Costs a build, and buys a
+        # claim a reviewer can check. `--store` is what tells the release script to
+        # bake the flag in; setting the file here and then building would be undone
+        # by the release script's own clean-up, which is exactly what happened and
+        # what the driver test caught.
         print("rebuilding for the Store with the sensor setup disabled...")
         result = subprocess.run([sys.executable,
-                                  os.path.join("scripts",
-                                               "make_release.py"),
-                                  "--build"],
+                                 os.path.join("scripts", "make_release.py"),
+                                 "--build", "--store"],
                                 cwd=HERE, capture_output=True, text=True,
                                 errors="replace")
         if result.returncode != 0:

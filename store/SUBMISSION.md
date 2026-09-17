@@ -221,25 +221,51 @@ running window at the required size; put them in `store/screenshots/`.
 
 ### Description
 
-The Store listing wants a short description and a long one. Draft:
+The listing wants a short description and a long one. Three lengths, so there is
+one that fits whatever the field allows:
 
-**Short:** Live GPU and system monitor: utilisation, temperatures, VRAM, clocks,
-power and fan for every graphics card, with CPU load, memory and per-core
-activity, graphs that scroll back through history, session logging and alarms.
+**One line (57 characters)**
 
-**Long:** gpumon shows the whole machine on one screen. Every GPU gets a card
-with its own graphs — utilisation, edge and hotspot temperature, VRAM, clocks,
-power and fan, read through the vendor's own drivers with no kernel driver
-needed. The CPU and memory get their own card, with per-core activity on demand.
-Graphs scroll back through history: drag one sideways to see what was happening a
-minute ago without interrupting the recording. Sessions are logged to a database
-you own, with markers, alarm thresholds, and a summary that charts and exports
-the run.
+> Everything your GPU is doing, on one screen.
 
-The CPU package temperature needs a kernel driver, because Windows does not
-expose that reading to ordinary programs. The portable download sets that up once
-with a single prompt; this packaged version shows the temperature when it is
-already set up and works fully without it.
+**Short (232 characters)** — the usual "short description" field
+
+> A live monitor for your graphics card: utilisation, temperature, VRAM, clocks,
+> power and fan, with CPU load, memory and per-core activity. Scrolling graphs
+> show what just happened, and sessions are logged so you can look back later.
+
+**Long** — the main description field
+
+> gpumon shows the whole machine on one screen, and keeps a record of it.
+>
+> **Every graphics card gets its own panel.** Utilisation, edge and hotspot
+> temperature, VRAM, core and memory clocks, power draw and fan speed — read
+> through the driver you already have, with no kernel driver and nothing else to
+> install.
+>
+> **The processor and memory sit below it**, with CPU load, memory use and
+> per-core activity, so a bottleneck is visible rather than guessed at.
+>
+> **The graphs scroll back through history.** Drag one sideways to see what was
+> happening a minute ago; recording carries on while you look, so you never lose
+> the moment you were trying to catch.
+>
+> **Sessions are logged to a database you own**, in your Documents folder. Drop a
+> marker when something interesting happens, set alarm thresholds and see them
+> marked on the graph, then open the summary for statistics, charts and CSV
+> export.
+>
+> **No accounts, no telemetry, no cloud.** gpumon reads sensors on your own
+> machine and sends nothing anywhere. Free and open source.
+>
+> Built for anyone who wants to see what their hardware is doing while it works:
+> a render, a training run, a game, or a machine that has started behaving
+> strangely.
+
+The CPU package temperature needs a kernel driver, since Windows does not expose
+that reading to ordinary programs. The portable download sets it up once with a
+single prompt; this packaged version shows the temperature when it is already set
+up, and works fully without it.
 
 ## Certification notes
 
