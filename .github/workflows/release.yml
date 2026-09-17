@@ -47,7 +47,7 @@ jobs:
         # artifacts: the checksum files, and the licences inside them, only exist
         # once something has been built. Testing first is what made the first
         # attempt at this workflow fail on a clean runner.
-        run: python scripts/make_release.py --all
+        run: python dev/scripts/make_release.py --all
         shell: pwsh
 
       - name: Run the test suite
@@ -71,7 +71,7 @@ jobs:
           GPUMON_SKIP_MACHINE_TESTS: "1"
         run: |
           $failed = 0
-          Get-ChildItem tests/test_*.py | ForEach-Object {
+          Get-ChildItem dev/tests/test_*.py | ForEach-Object {
             $name = $_.Name
             $job = Start-Job -ScriptBlock {
               param($path, $skip)
@@ -116,7 +116,7 @@ jobs:
           GPUMON_SIGN_ARGS: >-
             /dlib ${{ secrets.AZURE_SIGNING_DLIB }}
             /dmdf ${{ secrets.AZURE_SIGNING_METADATA }}
-        run: python scripts/make_release.py --sign
+        run: python dev/scripts/make_release.py --sign
         shell: pwsh
 
       - name: Note that the build is unsigned
@@ -132,9 +132,9 @@ jobs:
         with:
           name: gpumon-windows-x64
           path: |
-            release/**
-            release-onefile/**
-            gpumon-*-windows-x64.zip
+            dev/release/**
+            dev/release-onefile/**
+            dev/gpumon-*-windows-x64.*
 
       - name: Attach them to the release
         if: startsWith(github.ref, 'refs/tags/')
@@ -149,10 +149,10 @@ jobs:
           # The single-file build is published too: the same program as one
           # executable, for anyone who would rather not unpack a folder.
           files: |
-            gpumon-*-windows-x64.zip
-            gpumon-*-windows-x64.zip.sha256
-            gpumon-*-windows-x64.exe
-            gpumon-*-windows-x64.exe.sha256
+            dev/gpumon-*-windows-x64.zip
+            dev/gpumon-*-windows-x64.zip.sha256
+            dev/gpumon-*-windows-x64.exe
+            dev/gpumon-*-windows-x64.exe.sha256
           body: |
             Windows 10/11, 64-bit. Two downloads, the same program:
 

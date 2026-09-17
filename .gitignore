@@ -60,7 +60,14 @@ release-onefile/
 
 # The Store package and its build folder; the screenshots are kept, since the
 # submission needs them and they are small.
-store/layout/
-store/*.msix
-store/*.pfx
-store/*.cer
+dev/store/layout/
+dev/store/*.msix
+dev/store/*.pfx
+dev/store/*.cer
+
+# Build artifacts. The downloads belong on the releases page, which is outside the
+# repository: a 15 MB executable in git is 15 MB in every clone, for ever. The zip
+# was already ignored; the single-file build was not, and got committed once.
+*.exe
+*.exe.sha256
+msr-probe.txt
