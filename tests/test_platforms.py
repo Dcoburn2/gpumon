@@ -607,12 +607,21 @@ explains_cpu = any("CPU package temperature needs" in note
 check("the CPU-temperature note appears exactly when there is no reading",
       explains_cpu == (not caps.cpu_temp),
       f"note={explains_cpu} cpu_temp={caps.cpu_temp} | " + " | ".join(caps.notes))
-check("the ADL note is word for word what it was",
-      any(note.startswith(EXPECTED_NOTE_ADL_PREFIX) for note in caps.notes),
-      " | ".join(caps.notes))
-check("the LUID-attribution note is word for word what it was",
-      any(note.startswith(EXPECTED_NOTE_COUNTER_PREFIX) for note in caps.notes),
-      " | ".join(caps.notes))
+# The two notes below are written per card, with this machine's PCI addresses in
+# them, so on a machine with no AMD cards there is nothing to compare and the
+# check would be about the runner rather than the program. Where the cards are,
+# the wording is still held to the letter.
+if adl_up:
+    check("the ADL note is word for word what it was",
+          any(note.startswith(EXPECTED_NOTE_ADL_PREFIX) for note in caps.notes),
+          " | ".join(caps.notes))
+    check("the LUID-attribution note is word for word what it was",
+          any(note.startswith(EXPECTED_NOTE_COUNTER_PREFIX)
+              for note in caps.notes),
+          " | ".join(caps.notes))
+else:
+    print("    --  no AMD cards, so the two ADL note comparisons do not apply "
+          "here")
 check("no Linux note text leaks onto Windows",
       not any(word in note for note in caps.notes
               for word in ("sysfs", "rocm-smi", "hwmon")),
