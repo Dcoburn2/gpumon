@@ -153,17 +153,36 @@ def download_pawnio_installer() -> str | None:
     return path
 
 
+#: How the vendor's installer is asked to install without a user interface.
+#:
+#: Not `/S`. That is the NSIS convention and a reasonable guess, and it is wrong:
+#: PawnIO_setup.exe answers it with a message box - "Unknown argument: /S" -
+#: followed by its usage, which is
+#:
+#:     PawnIOSetup.exe [-install] [-uninstall] [-unrestricted] [-debuginfo] [-silent]
+#:
+#: so `-install -silent` is the pair that works. The wrong guess cost somebody a
+#: dialog box and no CPU temperature, which is how it was found.
+#:
+#: `-unrestricted` is deliberately not used: it installs the edition that loads
+#: unsigned modules, which is a security downgrade for no gain here - PawnIO's
+#: signed modules are the ones gpumon loads.
+PAWNIO_INSTALL_ARGS = ("-install", "-silent")
+PAWNIO_UNINSTALL_ARGS = ("-uninstall", "-silent")
+
+
 def install_pawnio(installer: str) -> bool:
     """Run the vendor's installer.
 
-    Silent first: the installer accepts `/S`, and a setup step that needs no
-    clicks beyond the one elevation is the point. If it is not installed
-    afterwards the user is told to run it themselves rather than left guessing.
+    Silently, with the switches the installer documents: a setup step that needs no
+    clicks beyond the one elevation is the point. If it is not installed afterwards
+    the user is told to run it themselves rather than left guessing.
     """
     if os.name != "nt":
         return False
     try:
-        process = subprocess.Popen([installer, "/S"], **_no_window())
+        process = subprocess.Popen([installer, *PAWNIO_INSTALL_ARGS],
+                                   **_no_window())
         process.wait(timeout=180)
     except (OSError, subprocess.TimeoutExpired) as exc:
         print(f"    the installer did not finish: {exc}")
@@ -172,6 +191,8 @@ def install_pawnio(installer: str) -> bool:
         if pawnio_installed():
             return True
         time.sleep(0.5)
+    print(f"    the installer finished but the driver is not there. If it showed "
+          f"a message, run it by hand: {installer}")
     return False
 
 

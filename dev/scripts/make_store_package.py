@@ -55,9 +55,10 @@ IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
 #: The Store wants x.y.z.0 and refuses a version it has already seen. Each upload
 #: therefore needs one: 1.0.0.0 was the first attempt, 1.0.1.0 the second, 1.0.2.0
 #: carried the processor name, 1.0.3.0 the chart resizing and hover readout,
-#: 1.0.4.0 the corrected release checksum, 1.0.5.0 the single-file download, and
-#: 1.0.6.0 the Windows-only calls that broke off Windows.
-VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.6.0")
+#: 1.0.4.0 the corrected release checksum, 1.0.5.0 the single-file download,
+#: 1.0.6.0 the Windows-only calls that broke off Windows, and 1.0.7.0 the PawnIO
+#: installer switch that never worked.
+VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.7.0")
 
 #: Tile sizes Microsoft requires, and the background the tiles are drawn on -
 #: the default theme's panel colour, so the Store listing looks like the program.

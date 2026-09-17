@@ -229,6 +229,28 @@ check("it does not claim to redistribute them",
       "an installer in the tree would be GPL-2.0 code being redistributed")
 check("it knows whether the driver is installed",
       sensorsetup.pawnio_installed() in (True, False))
+
+# The switches the vendor's installer documents, and not the ones it does not.
+# `/S` is the NSIS convention and a reasonable guess; PawnIO_setup.exe answers it
+# with a message box - "Unknown argument: /S" - and its usage, and the driver is
+# never installed. Somebody hit exactly that on their AMD machine, which is why
+# this is checked rather than assumed.
+install_args = sensorsetup.PAWNIO_INSTALL_ARGS
+print(f"    install switches: {install_args}")
+check("the installer is asked to install", "-install" in install_args,
+      str(install_args))
+check("and to stay silent", "-silent" in install_args, str(install_args))
+check("it is not asked with the switch that does not exist",
+      "/S" not in install_args and "/s" not in install_args, str(install_args))
+check("unsigned-module support is not requested",
+      "-unrestricted" not in install_args,
+      "that edition loads unsigned modules, which is a downgrade for no gain")
+check("the uninstall switches match the same usage",
+      set(sensorsetup.PAWNIO_UNINSTALL_ARGS) == {"-uninstall", "-silent"},
+      str(sensorsetup.PAWNIO_UNINSTALL_ARGS))
+check("and the installer invocation uses them",
+      "*PAWNIO_INSTALL_ARGS" in
+      open("sensorsetup.py", encoding="utf-8").read())
 check("it knows which modules it needs",
       set(sensorsetup.REQUIRED_MODULES) == {"IntelMSR.bin", "AMDFamily17.bin",
                                             "RyzenSMU.bin"},
