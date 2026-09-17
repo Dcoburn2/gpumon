@@ -311,6 +311,13 @@ check("each argument is quoted separately",
       command)
 
 print("\n[9] and the elevated child really receives those arguments")
+if os.name != "nt":
+    # Everything from here asks Windows for elevation and reads back what
+    # PowerShell made of the quoting, so there is nothing to learn elsewhere. The
+    # checks above - which found that Linux had no explanation for a missing CPU
+    # temperature - have already run.
+    print("  --  sections 9 onwards check Windows PowerShell quoting; stopping here")
+    raise SystemExit(0 if not problems else 1)
 # Run the same command shape without elevation, with a flag that returns
 # immediately, and read back what Python was handed.
 probe = sensorsetup.setup_command(

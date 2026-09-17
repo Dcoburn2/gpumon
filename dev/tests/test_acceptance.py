@@ -52,6 +52,13 @@ def _windows_only_test() -> None:
         raise SystemExit(0)
 
 
+# This checks the whole program against the machine it is running on: that the
+# cards are found, that their sparklines draw, that an alarm fires from a GPU
+# threshold. On a runner with no graphics card there is nothing to accept, and the
+# first Linux run reported exactly that - "no GPUs detected".
+_skip_machine_specific_test()
+
+
 
 
 

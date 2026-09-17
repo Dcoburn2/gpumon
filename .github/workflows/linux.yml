@@ -79,7 +79,7 @@ jobs:
               # by listing what was wrong ("- sampling gap of 2.4s") rather than
               # with the word FAIL, and the annotation is the only copy of this
               # that can be read without a token.
-              why=$(echo "$output" | grep -E "FAIL|Error|Traceback|^- " | head -5 | tr '\n' '|')
+              why=$(echo "$output" | grep -E "FAIL|Error|Traceback|^  - " | head -5 | tr '\n' '|')
               echo "::error title=$name::$why"
             fi
           done
