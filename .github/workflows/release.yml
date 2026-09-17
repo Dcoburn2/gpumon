@@ -53,6 +53,12 @@ jobs:
       - name: Run the test suite
         # Each test runs with its own bound, so a test that blocks names itself
         # instead of hanging the job. The slowest locally is 63 seconds.
+        #
+        # A failure is reported as two things: the output in the log, and an
+        # annotation carrying the failing lines, because the annotations are
+        # readable through the API without a token and the log is not. That is how
+        # a runner-only failure gets diagnosed without asking anyone to copy text
+        # out of a web page.
         run: |
           $failed = 0
           Get-ChildItem tests/test_*.py | ForEach-Object {
@@ -69,11 +75,16 @@ jobs:
               $text = ($out | Where-Object { $_ -notmatch '^EXIT=' }) -join "`n"
               Write-Host "== $name"
               Write-Host $text
-              if ($code -notmatch 'EXIT=0') { $failed = 1; Write-Host "::error::$name failed" }
+              if ($code -notmatch 'EXIT=0') {
+                $failed = 1
+                $why = ($out | Select-String 'FAIL|Error|Traceback' |
+                        Select-Object -First 6) -join ' | '
+                Write-Host "::error title=$name::$($why -replace '%','%25' -replace "`r",'' -replace "`n",' | ')"
+              }
             } else {
               Stop-Job $job
               Write-Host "== $name"
-              Write-Host "::error::$name did not finish within 300 seconds"
+              Write-Host "::error title=$name::did not finish within 300 seconds"
               $failed = 1
             }
             Remove-Job $job -Force
