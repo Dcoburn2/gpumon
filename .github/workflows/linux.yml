@@ -54,7 +54,13 @@ jobs:
         # Same shape as the Windows job: each test bounded, and a failure reported
         # as an annotation carrying its own failing lines, because annotations can
         # be read without a token and the log cannot.
+        #
+        # `set +e` first: the shell for a `run:` step is `bash -e`, so a failing
+        # test would otherwise end the step before the loop could record it - which
+        # is exactly what happened on the first run, leaving no annotations and
+        # therefore no information.
         run: |
+          set +e
           failed=0
           for test in dev/tests/test_*.py; do
             name=$(basename "$test")
