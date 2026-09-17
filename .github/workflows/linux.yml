@@ -75,7 +75,11 @@ jobs:
             echo "$output"
             if [ $code -ne 0 ]; then
               failed=1
-              why=$(echo "$output" | grep -E "FAIL|Error|Traceback" | head -4 | tr '\n' '|')
+              # The tail as well as the obvious lines: some tests report a failure
+              # by listing what was wrong ("- sampling gap of 2.4s") rather than
+              # with the word FAIL, and the annotation is the only copy of this
+              # that can be read without a token.
+              why=$(echo "$output" | grep -E "FAIL|Error|Traceback|^- " | head -5 | tr '\n' '|')
               echo "::error title=$name::$why"
             fi
           done

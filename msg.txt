@@ -1,0 +1,22 @@
+Guard the Windows DLLs that are loaded at import time
+
+ctypes.WinDLL does not exist on Linux - the attribute is missing from the module
+rather than failing to load - so a module-level ctypes.WinDLL("kernel32") makes that
+file unimportable there. Importing cpusensors raised AttributeError before any test
+could run, which is what the last Linux run reported.
+
+pawnio.py, cpusensors.py and sampler.py loaded kernel32 that way. Each uses it only
+for something Windows-specific - opening the sensor driver's device, pinning a
+thread to a core, hiding a console - so None is the right value elsewhere, and the
+call sites already check before using it.
+
+A new test asks the question directly: import every module in the program. On
+Windows it is a weak check, since they all import anyway. On Linux it is the one
+that catches this, and it names the file instead of leaving an AttributeError to be
+traced back from whichever test happened to import it first.
+
+The Linux job also now carries the tail of a failing test's output into its
+annotation, because some tests report what was wrong by listing it rather than with
+the word FAIL, and the annotation is the only copy readable without a token.
+
+Windows suite green: 40 files, 0 failures.

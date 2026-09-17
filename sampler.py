@@ -47,7 +47,7 @@ def raise_thread_priority() -> bool:
         except (AttributeError, PermissionError, OSError):
             return False
     try:
-        kernel32 = ctypes.WinDLL("kernel32.dll")
+        kernel32 = ctypes.WinDLL("kernel32.dll") if os.name == "nt" else None
         kernel32.GetCurrentThread.restype = ctypes.c_void_p
         kernel32.SetThreadPriority.argtypes = [ctypes.c_void_p, ctypes.c_int]
         kernel32.SetThreadPriority.restype = ctypes.c_int

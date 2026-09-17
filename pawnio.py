@@ -48,19 +48,25 @@ OPEN_EXISTING = 3
 FILE_ATTRIBUTE_NORMAL = 0x80
 INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 
-kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-kernel32.CreateFileW.restype = wintypes.HANDLE
-kernel32.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD,
-                                 wintypes.DWORD, ctypes.c_void_p,
-                                 wintypes.DWORD, wintypes.DWORD,
-                                 wintypes.HANDLE]
-kernel32.DeviceIoControl.restype = wintypes.BOOL
-kernel32.DeviceIoControl.argtypes = [wintypes.HANDLE, wintypes.DWORD,
-                                     ctypes.c_void_p, wintypes.DWORD,
-                                     ctypes.c_void_p, wintypes.DWORD,
-                                     ctypes.POINTER(wintypes.DWORD),
-                                     ctypes.c_void_p]
-kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+# The kernel32 prototypes are set up on Windows only. `ctypes.WinDLL` does not
+# exist on Linux - the attribute is missing, not merely failing - so doing this
+# unconditionally made the whole module unimportable there, which is how the first
+# Linux run of the suite found it.
+kernel32 = (ctypes.WinDLL("kernel32", use_last_error=True)
+            if os.name == "nt" else None)
+if kernel32 is not None:
+    kernel32.CreateFileW.restype = wintypes.HANDLE
+    kernel32.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD,
+                                     wintypes.DWORD, ctypes.c_void_p,
+                                     wintypes.DWORD, wintypes.DWORD,
+                                     wintypes.HANDLE]
+    kernel32.DeviceIoControl.restype = wintypes.BOOL
+    kernel32.DeviceIoControl.argtypes = [wintypes.HANDLE, wintypes.DWORD,
+                                         ctypes.c_void_p, wintypes.DWORD,
+                                         ctypes.c_void_p, wintypes.DWORD,
+                                         ctypes.POINTER(wintypes.DWORD),
+                                         ctypes.c_void_p]
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 
 
 class PawnIO:
