@@ -1,5 +1,13 @@
 # gpumon
 
+![gpumon monitoring three graphics cards, the processor and system memory](screenshots/monitor.png)
+
+![Alarm thresholds for every metric on every card](screenshots/alarms.png)
+
+![Browsing logged sessions](screenshots/sessions.png)
+
+![The session summary, with per-card statistics and CSV export](screenshots/summary.png)
+
 **Windows 10/11, 64-bit. [Download the latest release](https://github.com/Dcoburn2/gpumon/releases/latest) — no installer, no Python, no drivers.**
 
 A live monitor and logger for GPUs and the rest of the machine: utilisation,
@@ -7,7 +15,7 @@ temperature, hotspot, VRAM, clocks, power and fan for every graphics card, plus
 CPU load, CPU memory, per-core activity and system memory, with graphs that scroll
 back through history.
 
-![gpumon](dev/gpumon.png)
+![gpumon](gpumon.png)
 
 ## Download
 
@@ -28,7 +36,7 @@ Each download has a `.sha256` beside it holding that file's checksum, if you wan
 to check what you got:
 
 ```powershell
-(Get-FileHash .\gpumon-1.0.5-windows-x64.zip -Algorithm SHA256).Hash
+(Get-FileHash .\gpumon-<version>-windows-x64.zip -Algorithm SHA256).Hash
 ```
 
 Windows may show a "Windows protected your PC" notice the first time, because the
