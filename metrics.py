@@ -1342,6 +1342,19 @@ _DISPLAY_CLASS = (r"SYSTEM\CurrentControlSet\Control\Class"
                   r"\{4d36e968-e325-11ce-bfc1-08002be10318}")
 
 
+def counter_confidence(unclaimed: int, cards: int) -> str:
+    """How well the performance counters could be attributed to cards.
+
+    Exact when the numbers line up, and exact with a single card whatever the
+    numbers are: one card owns every counter no other vendor claimed, so order
+    never enters into it. Calling that "pci-order" is what put a warning under the
+    only card on a machine that has one GPU.
+    """
+    if cards <= 1:
+        return "exact"
+    return "exact" if unclaimed == cards else "pci-order"
+
+
 def _vendor_of(name: str) -> str:
     n = name.lower()
     if any(k in n for k in ("nvidia", "geforce", "quadro", "rtx", "tesla")):
@@ -1640,10 +1653,18 @@ class SensorManager:
                 if self.luid_calibration.get(card.device_key):
                     luids = list(self.luid_calibration[card.device_key])
                     confidence = "calibrated"
+                elif len(cards_needing_luids) <= 1:
+                    # One card, which may publish several hardware functions: it
+                    # owns all of them. Dealing them out one apiece left the rest
+                    # to be reported as an unattributed device - a second card
+                    # invented out of a card that publishes more than one
+                    # function, and a warning under the only card there was.
+                    luids = list(unclaimed)
+                    confidence = counter_confidence(len(unclaimed), 1)
                 else:
                     luids = list(dealt[card_position])
-                    confidence = ("exact" if len(unclaimed) == len(cards_needing_luids)
-                                  else "pci-order")
+                    confidence = counter_confidence(len(unclaimed),
+                                                    len(cards_needing_luids))
                 if luids:
                     sources.append("pdh")
             if sources:

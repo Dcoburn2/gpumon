@@ -55,7 +55,25 @@ import time
 import metrics as M
 
 sm = M.SensorManager()
-print("LUID assignment (round-robin, one working counter per card):")
+problems: list[str] = []
+
+print("\ncounter attribution, by how many cards are asking:")
+# One card owns every counter that no other vendor claimed, however many
+# functions it publishes, so its attribution is exact and there is nothing to
+# warn about. This is the rule that used to put a yellow "counter matched by
+# counter order" under the only card on a machine with one GPU - and that
+# invented a second, unattributed card out of the leftovers.
+_wanted = {(1, 1): "exact", (2, 1): "exact", (3, 1): "exact",
+           (2, 2): "exact", (3, 2): "pci-order", (2, 3): "pci-order"}
+for (_unclaimed, _cards), _expected in sorted(_wanted.items()):
+    _got = M.counter_confidence(_unclaimed, _cards)
+    _ok = _got == _expected
+    print(f"  {'OK  ' if _ok else 'FAIL'} {_unclaimed} counter(s) over "
+          f"{_cards} card(s) -> {_got} (want {_expected})")
+    if not _ok:
+        problems.append(f"counter_confidence({_unclaimed}, {_cards}) gave {_got}")
+
+print("\nLUID assignment (round-robin, one working counter per card):")
 for g in sm.gpus:
     print(f"  gpu{g.index} {g.pci or '-':12} conf={g.luid_confidence:10} "
           f"luids={g.luids}")
@@ -92,3 +110,11 @@ print("\nnotes:")
 for note in sm.capabilities().notes:
     print(f"  * {note}")
 sm.close()
+
+if problems:
+    print("\nLUID MAP TEST FAILED")
+    for item in problems:
+        print(f"  - {item}")
+else:
+    print("\nLUID MAP TEST PASSED")
+raise SystemExit(1 if problems else 0)

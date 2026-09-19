@@ -625,7 +625,12 @@ class MonitorApp:
         sub.pack(anchor="w")
         setattr(temp_label, "_sub", sub)
         notes: list[tk.Label] = []
-        if gpu.is_aggregate or gpu.luid_confidence in ("pci-order", "unattributed"):
+        # Only worth saying when there is something to confuse this card with.
+        # With one card there is no ambiguity to report, and a warning under the
+        # only card on the machine reads as a problem the user cannot act on.
+        if len(self.caps.gpus) > 1 and (
+                gpu.is_aggregate
+                or gpu.luid_confidence in ("pci-order", "unattributed")):
             detail = (f"{len(gpu.luids)} hardware functions combined"
                       if gpu.is_aggregate else "counter matched by counter order")
             note = tk.Label(left, text=detail, bg=W.PANEL, fg=W.WARN, font=t.tiny,
