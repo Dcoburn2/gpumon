@@ -281,6 +281,59 @@ check("no LibreHardwareMonitor automation is left",
       not pathlib.Path("lhm-server.ps1").exists(),
       "the menu-driving script that was the janky part")
 
+print("\n[6b] the AMD path reports the driver's own reason")
+# What this guards: a device that could not be opened, a module the driver
+# refused, and a module that is not there at all are three different problems,
+# and all three used to be reported as "no AMD module is available" - which sends
+# the reader looking for files that were present the whole time. It cost an
+# evening on a real AMD machine.
+import cpusensors
+
+
+class RefusingPawn:
+    """A stand-in for the driver, refusing everything asked of it."""
+
+    def __init__(self, error: str) -> None:
+        self.error = error
+        self.tried: list[str] = []
+
+    def load_module_file(self, path: str) -> bool:
+        self.tried.append(os.path.basename(path))
+        return False
+
+
+real_identify = cpusensors.identify
+try:
+    cpusensors.identify = lambda: cpusensors.CpuIdentity(
+        vendor="amd", model=33, name="AMD Ryzen 5 5600X3D")
+
+    refusal = ("could not open \\\\?\\GLOBALROOT\\Device\\PawnIO (Windows error 5: "
+               "Access is denied) - this needs administrator rights")
+    pawn = RefusingPawn(refusal)
+    readings = cpusensors.read_cpu(pawn)
+    print(f"    device refused  : {readings.error}")
+    check("the driver's own words are passed through",
+          "administrator" in readings.error, readings.error)
+    check("and not flattened into a summary of our own",
+          readings.error != "no AMD module is available", readings.error)
+    check("both AMD modules were tried before giving up",
+          pawn.tried == list(cpusensors.AMD_MODULES), str(pawn.tried))
+
+    refused = cpusensors.read_cpu(RefusingPawn(
+        "the driver refused the module AMDFamily17.bin (Windows error 50: "
+        "The request is not supported.)"))
+    print(f"    module refused  : {refused.error}")
+    check("a refused module says which module", "AMDFamily17.bin" in refused.error,
+          refused.error)
+
+    absent = cpusensors.read_cpu(RefusingPawn(
+        "could not read C:\\Users\\someone\\pawnio-modules\\AMDFamily17.bin: "
+        "[Errno 2] No such file or directory"))
+    check("a missing module says which file", "AMDFamily17.bin" in absent.error,
+          absent.error)
+finally:
+    cpusensors.identify = real_identify
+
 print("\n[7] a task left over from an older version is recognised as stale")
 # The failure this guards against: an old task points at a file that no longer
 # exists, so triggering it starts nothing and the program waits for a reading

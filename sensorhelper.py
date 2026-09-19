@@ -153,7 +153,7 @@ def run(reader=None, parent_pid: int = 0, hz: float = DEFAULT_HZ,
         max_seconds: float | None = None,
         sensors_file: str | None = None,
         heartbeat: str | None = None,
-        clock=time.monotonic, sleep=time.sleep,
+        clock=time.monotonic, sleep=time.sleep, wall=time.time,
         on_publish=None) -> HelperResult:
     """Poll the CPU and publish readings until something says stop.
 
@@ -169,6 +169,8 @@ def run(reader=None, parent_pid: int = 0, hz: float = DEFAULT_HZ,
     target = sensors_file or sensors_path()
     beat = heartbeat or heartbeat_path()
     started = clock()
+    #: Wall clock, for the one comparison that has to agree with a file's mtime.
+    started_wall = wall()
     result = HelperResult()
     period = 1.0 / hz if hz > 0 else 1.0
     # A reader that has never written a heartbeat is given the benefit of the
@@ -184,12 +186,21 @@ def run(reader=None, parent_pid: int = 0, hz: float = DEFAULT_HZ,
             result.error = str(exc)
         if values:
             values = dict(values)
-            values["t"] = time.time()
+            values["t"] = wall()
             try:
                 write_atomically(target, values)
                 result.published += 1
                 if on_publish:
                     on_publish(values)
+            except OSError as exc:
+                result.error = f"could not publish: {exc}"
+        elif result.error:
+            # Publish the reason rather than only the silence. Without this the
+            # program's only evidence is an old reading, and the label it shows
+            # says the helper is not running - when the helper is running
+            # perfectly well and cannot read the processor.
+            try:
+                write_atomically(target, {"error": result.error, "t": wall()})
             except OSError as exc:
                 result.error = f"could not publish: {exc}"
 
@@ -199,11 +210,19 @@ def run(reader=None, parent_pid: int = 0, hz: float = DEFAULT_HZ,
             return result
         try:
             if os.path.exists(beat):
-                beat_reference = os.path.getmtime(beat)
+                stamp = os.path.getmtime(beat)
+                # Only a heartbeat touched while this helper was running is
+                # evidence that a reader is out there. One left behind by an
+                # earlier session is already older than the idle limit, so
+                # trusting it stopped the helper on its first pass and reported a
+                # reader that had gone away - a reader that never existed, and
+                # after ten seconds while claiming forty-five.
+                if stamp >= started_wall:
+                    beat_reference = stamp
         except OSError:
             pass
         if beat_reference is not None:
-            if time.time() - beat_reference > idle_seconds:
+            if wall() - beat_reference > idle_seconds:
                 result.reason = ("nothing has read the sensors for "
                                  f"{idle_seconds:.0f}s")
                 return result

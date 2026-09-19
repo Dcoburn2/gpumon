@@ -511,6 +511,12 @@ def reading_age() -> float:
     return msrbackend.MsrBackend().reading_age()
 
 
+def published_error() -> str:
+    """Why the helper has no reading, if it said why. Empty when all is well."""
+    import msrbackend
+    return msrbackend.MsrBackend().published_error()
+
+
 def start_helper_now(wait: float = 30.0) -> tuple[bool, str]:
     """Trigger the helper task and wait for it to publish a reading.
 

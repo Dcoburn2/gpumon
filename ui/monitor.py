@@ -1736,8 +1736,14 @@ class MonitorApp:
                     sensorsetup.setup_marker()):
                 # Setup has run, so the helper exists; it is simply not publishing.
                 age = sensorsetup.reading_age()
-                hint = ("n/a - helper not running" if age > 30
-                        else "n/a - waiting for the helper")
+                if age > 30:
+                    hint = "n/a - helper not running"
+                elif sensorsetup.published_error():
+                    # It is running and cannot read the processor. The reason is
+                    # too long for the card; it is spelled out in Summary.
+                    hint = "n/a - helper cannot read the CPU"
+                else:
+                    hint = "n/a - waiting for the helper"
             elif apppaths.is_packaged():
                 hint = "n/a - see the portable build"
             else:

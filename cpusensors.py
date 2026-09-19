@@ -316,9 +316,14 @@ def read_cpu(pawn: pawnio.PawnIO | None = None) -> CpuReadings:
         if identity.vendor == "amd":
             for name in AMD_MODULES:
                 module = pawnio.module_path(name)
-                if os.path.exists(module) and pawn.load_module_file(module):
+                if pawn.load_module_file(module):
                     return read_amd(pawn)
-            return CpuReadings(error="no AMD module is available")
+            # Report the driver's own reason rather than a summary of our own. A
+            # device that could not be opened - "this needs administrator rights" -
+            # and a module the driver refused, and a module that is not there at
+            # all, all used to be flattened into "no AMD module is available",
+            # which sends the reader looking for files that were present all along.
+            return CpuReadings(error=pawn.error or "no AMD module is available")
         return CpuReadings(error=f"unsupported processor: {identity.name}")
     finally:
         if own_driver and pawn is not None:

@@ -816,15 +816,30 @@ def _msr_probe() -> int:
         say(f"    holding {len(workers)} threads busy for 26s...")
         time.sleep(9.0)                     # let the temperature plateau
         with pawnio.PawnIO() as pawn:
-            if not pawn.load_module_file(pawnio.module_path(CS.INTEL_MODULE)):
+            # The module and the reader both follow the processor, not the other
+            # way round: hardcoding Intel's here meant an AMD machine ended the
+            # comparison with "the driver refused the module IntelMSR.bin".
+            module, reader = "", None
+            if identity.vendor == "amd":
+                for name in CS.AMD_MODULES:
+                    if pawn.load_module_file(pawnio.module_path(name)):
+                        module, reader = name, CS.read_amd
+                        break
+            elif pawn.load_module_file(pawnio.module_path(CS.INTEL_MODULE)):
+                module, reader = CS.INTEL_MODULE, CS.read_intel
+            if reader is None:
                 say(f"    could not reopen the module: {pawn.error}")
             else:
+                say(f"    comparing with {module}")
+                others = (("CPU Package", "Core (Tctl/Tdie)", "CPU Core"),
+                          ("Core #1", "CCD1 (Tdie)")) if identity.vendor == "amd" \
+                    else (("CPU Package",), ("P-Core #1", "CPU Core #1"))
                 deltas = []
                 for _ in range(6):
-                    reading = CS.read_intel(pawn)
+                    reading = reader(pawn)
                     theirs = server_temperatures()
-                    package = theirs.get("CPU Package")
-                    first_core = theirs.get("P-Core #1", theirs.get("CPU Core #1"))
+                    package = next((theirs[n] for n in others[0] if n in theirs), None)
+                    first_core = next((theirs[n] for n in others[1] if n in theirs), None)
                     core_zero = reading.per_core[0] if reading.per_core else None
                     if reading.package is not None and package is not None:
                         deltas.append(reading.package - package)

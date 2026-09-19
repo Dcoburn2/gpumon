@@ -41,6 +41,19 @@ class MsrBackend:
         self.heartbeat = heartbeat or sensorhelper.heartbeat_path()
         self._age = 0.0
 
+    def _published_error(self, payload: dict) -> str:
+        """The helper's own reason for having nothing to publish, if it gave one.
+
+        A helper that cannot read the processor - no signed module for this CPU, a
+        driver device it was not allowed to open - now says so in the file it
+        publishes. Passing that on beats passing on silence, which reads as "the
+        helper is not running" when the helper is running perfectly well.
+        """
+        message = payload.get("error")
+        if isinstance(message, str) and message.strip():
+            return f"the sensor helper cannot read the processor: {message}"
+        return ""
+
     def available(self) -> bool:
         payload = sensorhelper.read_sensors(self.path)
         if not payload:
@@ -52,8 +65,8 @@ class MsrBackend:
             self.error = (f"the sensor helper stopped publishing "
                           f"({age:.0f}s ago)")
             return False
-        self.error = ""
-        return True
+        self.error = self._published_error(payload)
+        return not self.error
 
     def poll(self) -> dict[str, float]:
         payload = sensorhelper.read_sensors(self.path)
@@ -65,6 +78,9 @@ class MsrBackend:
             self.error = (f"the sensor helper stopped publishing "
                           f"({age:.0f}s ago)")
             return {}
+        # An error payload carries no numbers, so this comes back empty; the
+        # reason is kept for whoever asks why nothing arrived.
+        self.error = self._published_error(payload)
         out: dict[str, float] = {}
         for key, value in payload.items():
             if key == "t":
@@ -73,9 +89,14 @@ class MsrBackend:
                 out[key] = float(value)
         # A poll *is* a read, so it doubles as the helper's keep-alive: the helper
         # exits once nobody has asked for a reading for a while, and this is what
-        # tells it somebody still is.
+        # tells it somebody still is. That includes a helper that is failing: it
+        # is kept alive so it can start working the moment the cause is fixed.
         sensorhelper.touch_heartbeat(self.heartbeat)
         return out
+
+    def published_error(self) -> str:
+        """Why the helper has no reading, for the interface to repeat."""
+        return self._published_error(sensorhelper.read_sensors(self.path))
 
     def close(self) -> None:
         pass

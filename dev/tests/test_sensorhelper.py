@@ -86,14 +86,19 @@ class FakeClock:
 
     def __init__(self) -> None:
         self.now = 1000.0
+        #: The wall-clock time this fake clock started at, so `wall` can advance
+        #: with it. The helper compares wall time against a file's mtime, and a
+        #: test that cannot move both together cannot test that comparison.
+        self.base = time.time()
 
     def monotonic(self) -> float:
         return self.now
 
+    def wall(self) -> float:
+        return self.base + (self.now - 1000.0)
+
     def sleep(self, seconds: float) -> None:
         self.now += seconds
-        # Real time in the JSON is used for age, so keep them consistent.
-        self.wall = getattr(self, "wall", time.time()) + seconds
 
 
 print("=" * 84)
@@ -157,18 +162,78 @@ print(f"    reason: {result.reason!r}")
 check("a dead parent stops it immediately", "exited" in result.reason,
       result.reason)
 
-print("\n[5] it stops when nobody is reading any more")
-# The heartbeat file is what a reader touches; make it look old.
-sensorhelper.write_atomically(SENSORS, {"cpu_temp": 40.0, "t": time.time()})
+print("\n[5] it stops when a reader that was reading goes away")
+# The reader touches the heartbeat, as the program does on every poll, and then
+# stops asking. That - not a file left behind - is what the helper has to notice.
+clock = FakeClock()
+touches = {"n": 0}
+
+
+def reader_that_stops_asking():
+    touches["n"] += 1
+    if touches["n"] <= 3:
+        sensorhelper.touch_heartbeat(BEAT)
+        # Put the file's timestamp on the clock the helper is being given, so the
+        # comparison under test is decided by the helper's arithmetic rather than
+        # by how long the test itself took to run.
+        stamp = clock.wall()
+        os.utime(BEAT, (stamp, stamp))
+    return {"cpu_temp": 40.0}
+
+
+result = sensorhelper.run(reader=reader_that_stops_asking, hz=1.0, idle_seconds=5.0,
+                          max_seconds=30.0, sensors_file=SENSORS, heartbeat=BEAT,
+                          clock=clock.monotonic, sleep=clock.sleep, wall=clock.wall)
+print(f"    reason: {result.reason!r}")
+check("a reader that stops being heard stops it", "read the sensors" in result.reason,
+      result.reason)
+
+print("\n[5b] a heartbeat left behind by an earlier run is not a reader")
+# This is the bug that made the helper quit after ten seconds while reporting
+# forty-five: a stale file from a previous session was read as a reader that had
+# just gone away.
+clock = FakeClock()
 with open(BEAT, "w", encoding="utf-8"):
     pass
-os.utime(BEAT, (time.time() - 120, time.time() - 120))
-clock = sensorhelper.run(reader=lambda: {"cpu_temp": 40.0}, hz=1.0,
-                         idle_seconds=5.0, max_seconds=30.0,
-                         sensors_file=SENSORS, heartbeat=BEAT)
-print(f"    reason: {clock.reason!r}")
-check("a stale heartbeat stops it", "read the sensors" in clock.reason,
-      clock.reason)
+os.utime(BEAT, (time.time() - 600, time.time() - 600))
+result = sensorhelper.run(reader=lambda: {"cpu_temp": 40.0}, hz=1.0, idle_seconds=5.0,
+                          max_seconds=30.0, sensors_file=SENSORS, heartbeat=BEAT,
+                          clock=clock.monotonic, sleep=clock.sleep, wall=clock.wall)
+print(f"    reason: {result.reason!r}")
+check("it is not read as a reader that went away",
+      "read the sensors" not in result.reason, result.reason)
+check("it is read as nobody having read at all",
+      "no reader ever appeared" in result.reason, result.reason)
+
+print("\n[5c] a helper that cannot read says why, instead of going quiet")
+# The AMD case: the driver refuses to open, or has no module for this processor.
+# Publishing only silence left the program saying "the helper is not running"
+# about a helper that was running and failing.
+
+
+def cannot_read():
+    raise RuntimeError("no AMD module is available")
+
+
+clock = FakeClock()
+result = sensorhelper.run(reader=cannot_read, hz=1.0, idle_seconds=2.0,
+                          max_seconds=1.5, sensors_file=SENSORS, heartbeat=BEAT,
+                          clock=clock.monotonic, sleep=clock.sleep, wall=clock.wall)
+published = sensorhelper.read_sensors(SENSORS)
+print(f"    published: {published}")
+check("it published nothing to mistake for a reading", result.published == 0,
+      str(result.published))
+check("the published file carries the reason",
+      "no AMD module" in str(published.get("error")), str(published))
+check("the payload is still timestamped, so its age means something",
+      isinstance(published.get("t"), (int, float)), str(published))
+backend_failing = msrbackend.MsrBackend(path=SENSORS, heartbeat=BEAT)
+check("the backend does not call it available", not backend_failing.available())
+check("and it repeats the helper's reason", "no AMD module" in backend_failing.error,
+      backend_failing.error)
+check("the interface can ask for the reason directly",
+      "no AMD module" in backend_failing.published_error(),
+      backend_failing.published_error())
 
 print("\n[6] the backend only trusts fresh readings")
 backend = msrbackend.MsrBackend(path=SENSORS, heartbeat=BEAT)
