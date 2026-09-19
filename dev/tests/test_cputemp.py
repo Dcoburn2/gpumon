@@ -334,6 +334,14 @@ try:
 finally:
     cpusensors.identify = real_identify
 
+# The import above is the test: this module is imported on Linux too, and setting
+# attributes on a kernel32 handle that is None there broke the whole Linux run.
+_source = open("cpusensors.py", encoding="utf-8").read()
+check("the kernel32 handle is only set up when there is one",
+      'if os.name == "nt" else None' in _source
+      and "if kernel32 is not None:" in _source,
+      "the setup used to run unconditionally, which is an import-time crash on Linux")
+
 print("\n[7] a task left over from an older version is recognised as stale")
 # The failure this guards against: an old task points at a file that no longer
 # exists, so triggering it starts nothing and the program waits for a reading

@@ -33,9 +33,14 @@ _IDENTIFIER = re.compile(r"Family (\d+) Model (\d+) Stepping (\d+)")
 
 kernel32 = ctypes.WinDLL("kernel32", use_last_error=True) \
     if os.name == "nt" else None
-kernel32.GetCurrentThread.restype = ctypes.c_void_p
-kernel32.SetThreadAffinityMask.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
-kernel32.SetThreadAffinityMask.restype = ctypes.c_size_t
+if kernel32 is not None:
+    # The setup has to be inside the guard. This module is imported on Linux as
+    # well, where the handle is None and `kernel32.GetCurrentThread` is an
+    # AttributeError at import time - before any code that would never run there
+    # has had a chance to decide otherwise.
+    kernel32.GetCurrentThread.restype = ctypes.c_void_p
+    kernel32.SetThreadAffinityMask.argtypes = [ctypes.c_void_p, ctypes.c_size_t]
+    kernel32.SetThreadAffinityMask.restype = ctypes.c_size_t
 
 
 @dataclass
@@ -184,6 +189,11 @@ def read_with_affinity(pawn: pawnio.PawnIO, index: int, mask: int) -> int | None
     the sampling thread pinned to core 0 would skew every utilisation figure
     gpumon reports.
     """
+    if kernel32 is None:
+        # Not Windows. There is no thread to pin, and a core's own register
+        # cannot be attributed to a core without pinning, so this core has no
+        # reading rather than somebody else's.
+        return None
     thread = kernel32.GetCurrentThread()
     previous = kernel32.SetThreadAffinityMask(thread, mask)
     try:
