@@ -92,7 +92,7 @@ print("=" * 84)
 print("LIVE HOVER AND SUMMARY PROCESSOR TEST")
 print("=" * 84)
 
-themes.set_theme("eva-01")
+themes.set_theme("shinji")
 manager = M.SensorManager(per_core=False)
 store = S.Store(DB)
 sampler = SP.Sampler(manager, store, sample_hz=10.0)

@@ -121,20 +121,21 @@ keys = [key for key, _label, _blurb in catalog]
 print(f"    {len(keys)} themes: {', '.join(keys)}")
 check("eleven themes are defined", len(keys) == 11, str(len(keys)))
 check("the default is first", keys[0] == themes.DEFAULT_KEY, keys[0])
-check("the default is Unit-01, Shinji's",
-      themes.DEFAULT_KEY == "eva-01" and keys[0] == "eva-01",
+check("the default is Shinji",
+      themes.DEFAULT_KEY == "shinji" and keys[0] == "shinji",
       f"default={themes.DEFAULT_KEY}")
-check("every Evangelion unit is present",
-      {"eva-00", "eva-01", "eva-02", "eva-03", "eva-08", "eva-13"} <= set(keys))
-# Unit-01 leads deliberately, so what is checked is that the rest stay tidy
-# behind it rather than that every unit is in numeric order.
-check("the remaining units are in numeric order",
-      [k for k in keys[1:] if k.startswith("eva-")] ==
-      ["eva-00", "eva-02", "eva-03", "eva-08", "eva-13"],
-      str([k for k in keys if k.startswith("eva-")]))
-check("five non-Evangelion themes join them",
-      len([k for k in keys if not k.startswith("eva-")]) == 5,
-      str([k for k in keys if not k.startswith("eva-")]))
+CHARACTER_PALETTES = {"shinji", "rei", "asuka", "touji", "mari", "kaworu"}
+check("every character palette is present",
+      CHARACTER_PALETTES <= set(keys), str(sorted(CHARACTER_PALETTES - set(keys))))
+# Shinji leads deliberately; the rest of the character palettes follow it, and the
+# five that are not character palettes come last.
+check("the character palettes lead, in order",
+      [k for k in keys if k in CHARACTER_PALETTES] ==
+      ["shinji", "rei", "asuka", "touji", "mari", "kaworu"],
+      str([k for k in keys if k in CHARACTER_PALETTES]))
+check("five palettes that are not character themes join them",
+      len([k for k in keys if k not in CHARACTER_PALETTES]) == 5,
+      str([k for k in keys if k not in CHARACTER_PALETTES]))
 check("every theme has a label and a blurb",
       all(label and blurb for _k, label, blurb in catalog))
 check("labels are unique", len({label for _k, label, _b in catalog}) == len(keys))
@@ -218,19 +219,25 @@ signatures = {(themes.get(k).bg, themes.get(k).panel, themes.get(k).accent)
               for k in keys}
 check("no two themes share background, panel and accent",
       len(signatures) == len(keys), f"{len(signatures)} distinct of {len(keys)}")
-for pair in (("eva-00", "eva-01"), ("eva-01", "eva-02"), ("eva-02", "eva-08")):
+for pair in (("rei", "shinji"), ("shinji", "asuka"), ("asuka", "mari")):
     a, b = (themes.get(k) for k in pair)
     check(f"{pair[0]} and {pair[1]} differ in background and accent",
           a.bg != b.bg and a.accent != b.accent)
 
 print("\n[7] lookup, aliases and fallbacks")
-check("aliases resolve", themes.normalize("EVA-01") == "eva-01"
-      and themes.normalize("unit-01") == "eva-01"
-      and themes.normalize("shinji") == "eva-01"
+check("aliases resolve", themes.normalize("Shinji") == "shinji"
+      and themes.normalize("toji") == "touji"
+      and themes.normalize("01") == "shinji"
       and themes.normalize("gruvbox_dark") == "gruvbox"
       and themes.normalize("  Nord  ") == "nord",
       str([themes.normalize(n) for n in
-           ("EVA-01", "unit-01", "shinji", "gruvbox_dark", "  Nord  ")]))
+           ("Shinji", "toji", "01", "gruvbox_dark", "  Nord  ")]))
+# The unit designations are gone on purpose. They are somebody else's names, and
+# a config or a habit that still uses them should fall back to the default rather
+# than quietly resolving to anything.
+check("the unit designations no longer resolve",
+      themes.normalize("EVA-01") == "" and themes.normalize("unit-01") == "",
+      f"{themes.normalize('EVA-01')!r} {themes.normalize('unit-01')!r}")
 check("an unknown name normalises to nothing", themes.normalize("chartreuse") == "")
 check("get() falls back to the default",
       themes.get("chartreuse").key == themes.DEFAULT_KEY)

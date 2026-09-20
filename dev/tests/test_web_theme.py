@@ -210,34 +210,34 @@ try:
           and "cdn." not in page)
 
     print("\n[3] POST /api/theme switches the running server")
-    status, payload = post_theme("eva-01")
+    status, payload = post_theme("shinji")
     check("status 200", status == 200, str(status))
     check("the answer carries ok, theme and label",
-          payload.get("ok") is True and payload.get("theme") == "eva-01"
-          and payload.get("label") == "EVA-01 (Shinji)",
+          payload.get("ok") is True and payload.get("theme") == "shinji"
+          and payload.get("label") == "Shinji",
           json.dumps(payload)[:90])
-    check("the active theme is now eva-01", themes.current_key() == "eva-01",
+    check("the active theme is now shinji", themes.current_key() == "shinji",
           themes.current_key())
     page = request("/")[1]
-    check("the next page is served in eva-01",
+    check("the next page is served in shinji",
           "#0a0710" in page and "#9a6bff" in page)
     check("and no longer in the previous theme", "#0b0f14" not in page)
     check("the picker moved to the new option",
-          page.count('value="eva-01" selected') == 1
+          page.count('value="shinji" selected') == 1
           and 'value="nvtop" selected' not in page)
     status, state = get_json("/api/state")
     check("/api/state reports theme and theme_label",
-          state.get("theme") == "eva-01"
-          and state.get("theme_label") == "EVA-01 (Shinji)",
+          state.get("theme") == "shinji"
+          and state.get("theme_label") == "Shinji",
           f"{state.get('theme')!r} {state.get('theme_label')!r}")
 
     print("\n[4] keys, aliases and rejections")
-    status, payload = post_theme("unit-02")
+    status, payload = post_theme("02")
     check("a relaxed spelling is normalized onto a key",
-          status == 200 and payload.get("theme") == "eva-02",
+          status == 200 and payload.get("theme") == "asuka",
           json.dumps(payload)[:70])
     check("the alias really switched the palette",
-          themes.current_key() == "eva-02", themes.current_key())
+          themes.current_key() == "asuka", themes.current_key())
     for bad in ("no-such-theme", "", None, 17):
         status, payload = post_theme(bad)
         check(f"{bad!r} is a 400 carrying a JSON error",
@@ -248,7 +248,7 @@ try:
     status, _ = request("/api/theme")
     check("GET /api/theme is a 405", status == 405, str(status))
     check("every rejection left the active theme alone",
-          themes.current_key() == "eva-02", themes.current_key())
+          themes.current_key() == "asuka", themes.current_key())
 
     print("\n[5] the choice is persisted without disturbing the rest")
     status, payload = post_theme("nord")

@@ -160,35 +160,36 @@ GUI's picker, the terminal view's `T`, or `--theme NAME`; the choice is saved to
 
 | Key | Name | |
 |-----|------|---|
+| `shinji` | Shinji | violet with a fluorescent green trim — **the default** |
+| `rei` | Rei | the light one: light grey with orange trim |
+| `asuka` | Asuka | red, black and orange |
+| `touji` | Touji | charcoal and silver with a red core |
+| `mari` | Mari | magenta and pink with white trim |
+| `kaworu` | Kaworu | black and violet with dual green cores |
 | `nvtop` | nvtop | the original: cold blue on near-black |
-| `eva-00` | EVA-00 (Rei) | the light one: white-grey armour, orange trim |
-| `eva-01` | EVA-01 (Shinji) | violet armour, fluorescent green trim — **the default** |
-| `eva-02` | EVA-02 (Asuka) | production red, black and orange |
-| `eva-03` | EVA-03 (Touji) | charcoal and silver, red core |
-| `eva-08` | EVA-08 (Mari) | magenta and pink, white trim |
-| `eva-13` | EVA-13 (Kaworu) | black and violet, dual green cores |
 | `nord` | Nord | cool arctic blue-grey |
 | `gruvbox` | Gruvbox | warm retro terminal |
 | `amber` | Amber CRT | monochrome amber phosphor |
 | `matrix` | Matrix | green phosphor on black |
 
-Unit-01 is what the program looks like out of the box; the palette this started
+Shinji is what the program looks like out of the box; the palette this started
 from (`nvtop`) is still there, one click away. Palettes register in source order
 and the first one is the default, so `test_themes.py` asserts both halves of that:
-Unit-01 leads, and the other units stay in numeric order behind it.
+the character palettes lead in order, and the five that are not character palettes
+follow them.
 
 `python gpumon.py --list-themes` prints them with their series colours.
 Green/amber/red keep their alarm meaning in every theme, including the
 monochrome ones — `test_themes.py` asserts the contrast ratios and the hues so a
 palette edit cannot quietly make a warning unreadable.
 
-`eva-00` is the only light theme, and it is not the dark palettes inverted: text,
+`rei` is the only light theme, and it is not the dark palettes inverted: text,
 grid, series and alarm colours are all darker so they read on a light page, and
 the parts of the UI that were hardcoded dark (the log button, the scroll
 indicator, the chart threshold line) are derived from the palette instead. Every
 palette colour is also checked against the xterm-256 cube the terminal view falls
 back to when truecolor is unavailable: the worst of the eleven is 51 RGB units
-off, which is why `eva-00`'s red and green are cube-exact.
+off, which is why `rei`'s red and green are cube-exact.
 
 ### Navigation, in every version
 

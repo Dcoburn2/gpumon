@@ -19,10 +19,10 @@ from __future__ import annotations
 from dataclasses import dataclass, fields
 
 #: Ordered; the first entry is the default and the order is the menu order.
-#: Shinji's Unit-01 is the default - violet armour with fluorescent green trim -
-#: which is what the program looks like out of the box. `nvtop`, the palette this
-#: started from, is still there and still one click away.
-DEFAULT_KEY = "eva-01"
+#: Shinji is the default - violet with a fluorescent green trim - which is what
+#: the program looks like out of the box. `nvtop`, the palette this started from,
+#: is still there and still one click away.
+DEFAULT_KEY = "shinji"
 
 
 @dataclass(frozen=True)
@@ -77,10 +77,10 @@ def _add(palette: Palette) -> None:
 
 
 # --------------------------------------------------------------------------
-# Evangelion, Unit-01 first: the first palette registered is the default
+# The default. The first palette registered is the one it starts on.
 # --------------------------------------------------------------------------
 _add(_p(
-    "eva-01", "EVA-01 (Shinji)", "violet armour, fluorescent green trim",
+    "shinji", "Shinji", "violet with a fluorescent green trim",
     bg="#0a0710", panel="#17102a", panel_alt="#120c20", border="#2f2150",
     text="#ded3f5", text_dim="#8d7cb5", text_bright="#f4eeff",
     accent="#9a6bff", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
@@ -89,13 +89,7 @@ _add(_p(
             "#f48fb1", "#b39ddb", "#69f0ae", "#82b1ff"]))
 
 # --------------------------------------------------------------------------
-# Evangelion: the units, each in its own livery
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# The scheme this started from, kept for anyone who prefers it
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# The original nvtop-inspired scheme
+# The original nvtop-inspired scheme, kept for anyone who prefers it
 # --------------------------------------------------------------------------
 _add(_p(
     "nvtop", "nvtop", "the original: cold blue on near-black",
@@ -107,11 +101,11 @@ _add(_p(
             "#7ee787", "#ff7eb6", "#d2a8ff", "#79c0ff"]))
 
 _add(_p(
-    "eva-00", "EVA-00 (Rei)", "prototype in light grey, orange shoulder armour",
-    # The one light theme: Unit-00's white-and-grey armour is the page, and the
-    # orange trim, blue-grey shading and dark text do the rest. Every colour a
-    # light background needs - text, grid, series - is darker here, which is why
-    # it is not simply the dark palette inverted.
+    "rei", "Rei", "light grey with orange trim",
+    # The one light theme: white-grey is the page, and the orange accent,
+    # blue-grey shading and dark text do the rest. Every colour a light
+    # background needs - text, grid, series - is darker here, which is why it
+    # is not simply the dark palette inverted.
     bg="#dfe4e8", panel="#eef1f4", panel_alt="#e7ebef", border="#94a5b3",
     text="#1f2b34", text_dim="#5d6e7a", text_bright="#0b141a",
     accent="#d9480f", ok="#00875f", warn="#b8860b", crit="#d70000",
@@ -120,7 +114,7 @@ _add(_p(
             "#6741d9", "#0b7285", "#a61e4e", "#5f3dc4"]))
 
 _add(_p(
-    "eva-02", "EVA-02 (Asuka)", "production red, black and orange",
+    "asuka", "Asuka", "red, black and orange",
     bg="#100507", panel="#200c10", panel_alt="#190809", border="#3d1a1f",
     text="#f2d8d5", text_dim="#ab767c", text_bright="#fff0ee",
     accent="#ff6b35", ok="#4ecb71", warn="#ffd23f", crit="#ff1744",
@@ -129,11 +123,11 @@ _add(_p(
             "#ffb4a2", "#e0e0e0", "#ff8a65", "#f4a261"]))
 
 _add(_p(
-    "eva-03", "EVA-03 (Touji)", "charcoal and silver, red core",
+    "touji", "Touji", "charcoal and silver with a red core",
     bg="#08090b", panel="#14171b", panel_alt="#101317", border="#2a2f36",
     text="#cfd6dd", text_dim="#7b8794", text_bright="#eef2f6",
     # Silver is the accent rather than the red: red already means "critical"
-    # everywhere else in the app, and this unit has plenty of grey to carry a
+    # everywhere else in the app, and this palette has plenty of grey to carry a
     # neutral highlight.
     accent="#c0c8d0", ok="#4fb477", warn="#e0a458", crit="#ff5252",
     idle="#333a42", selection="#1e242b", plot_bg="#050608",
@@ -141,7 +135,7 @@ _add(_p(
             "#4fb477", "#b197fc", "#ff9f68", "#63e6be"]))
 
 _add(_p(
-    "eva-08", "EVA-08 (Mari)", "magenta and pink, white trim",
+    "mari", "Mari", "magenta and pink with white trim",
     bg="#0d0611", panel="#1d0f21", panel_alt="#160a19", border="#3c2141",
     text="#f1d9ef", text_dim="#ab7cab", text_bright="#fdeffb",
     accent="#ff5fb0", ok="#6ee7b7", warn="#ffc857", crit="#ff2d6f",
@@ -150,7 +144,7 @@ _add(_p(
             "#f9a8d4", "#a5b4fc", "#fda4af", "#5eead4"]))
 
 _add(_p(
-    "eva-13", "EVA-13 (Kaworu)", "black and violet, dual green cores",
+    "kaworu", "Kaworu", "black and violet with dual green cores",
     bg="#06070c", panel="#121420", panel_alt="#0d0f18", border="#262a3d",
     text="#d3d7e6", text_dim="#7e85a3", text_bright="#f0f2fa",
     accent="#b06bff", ok="#35d07f", warn="#ffc043", crit="#ff4d6d",
@@ -159,7 +153,7 @@ _add(_p(
             "#ffc043", "#8da2ff", "#ff8a65", "#7cf5c4"]))
 
 # --------------------------------------------------------------------------
-# Five that are not Evangelion
+# Five that are not the character palettes
 # --------------------------------------------------------------------------
 _add(_p(
     "nord", "Nord", "cool arctic blue-grey",
@@ -197,22 +191,16 @@ _add(_p(
     series=["#00ff41", "#7cffb2", "#00d4a0", "#b6ff00",
             "#39ff88", "#00b34a", "#a8ff60", "#00e5ff"]))
 
-#: Relaxed spellings people actually type, mapped onto a real key.
+#: Relaxed spellings people actually type, mapped onto a real key. A theme's
+#: own key does not need an entry: `normalize` checks those first.
 ALIASES = {
     "default": DEFAULT_KEY, "original": DEFAULT_KEY, "nvtop-style": DEFAULT_KEY,
-    "eva01": "eva-01", "unit-01": "eva-01", "unit01": "eva-01",
-    "shinji": "eva-01", "01": "eva-01",
-    "eva00": "eva-00", "unit-00": "eva-00", "unit00": "eva-00",
-    "rei": "eva-00", "00": "eva-00", "light": "eva-00", "light-grey": "eva-00",
-    "eva02": "eva-02", "unit-02": "eva-02", "unit02": "eva-02",
-    "asuka": "eva-02", "02": "eva-02",
-    "eva03": "eva-03", "unit-03": "eva-03", "unit03": "eva-03",
-    "touji": "eva-03", "toji": "eva-03", "03": "eva-03",
-    "eva08": "eva-08", "unit-08": "eva-08", "unit08": "eva-08",
-    "mari": "eva-08", "08": "eva-08",
-    "eva13": "eva-13", "unit-13": "eva-13", "unit13": "eva-13",
-    "kaworu": "eva-13", "kaoru": "eva-13", "13": "eva-13",
-    "evangelion": "eva-01",
+    "01": "shinji", "1": "shinji", "violet": "shinji",
+    "00": "rei", "0": "rei", "light": "rei", "light-grey": "rei",
+    "02": "asuka", "2": "asuka",
+    "toji": "touji", "03": "touji", "3": "touji",
+    "08": "mari", "8": "mari",
+    "kaoru": "kaworu", "13": "kaworu",
     "gruvbox-dark": "gruvbox", "nord-dark": "nord",
     "amber-crt": "amber", "crt": "amber", "phosphor": "amber",
     "matrix-green": "matrix",

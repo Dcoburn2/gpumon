@@ -219,7 +219,7 @@ A.save_config = lambda cfg, path=None: saved_config.update(cfg)
 config_before = os.path.exists(A.config_path())
 before_labels = app.panels[0].temp_label
 before_bg = app.root.cget("bg")
-target = "eva-02" if TH.current_key() != "eva-02" else "nord"
+target = "asuka" if TH.current_key() != "asuka" else "nord"
 app.apply_theme(target)
 pump(3.0)
 

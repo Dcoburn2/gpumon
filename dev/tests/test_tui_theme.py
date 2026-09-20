@@ -479,7 +479,7 @@ with environment(COLORTERM="truecolor", TERM="xterm-256color"):
     for detail in frame_problems[:6]:
         print(f"       {detail}")
 
-    themes.set_theme("eva-08")
+    themes.set_theme("mari")
     palette = themes.current()
     raw, text = render_frame("live", width=40, height=20)
     check("a 40-column frame keeps its colours",

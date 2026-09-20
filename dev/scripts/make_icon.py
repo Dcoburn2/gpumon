@@ -26,7 +26,7 @@ import zlib
 from typing import Sequence
 
 # Palette. The monster is the application's own mascot - horns, two big eyes,
-# a mouth full of a graphics card - drawn in the violet of the EVA-01 theme so
+# a mouth full of a graphics card - drawn in the violet of the default theme so
 # the icon and the app look like the same thing.
 TILE_TOP = (0x1A, 0x14, 0x33)
 TILE_BOTTOM = (0x0C, 0x0A, 0x18)

@@ -596,7 +596,7 @@ class _Handler(BaseHTTPRequestHandler):
         """Switch the colour theme and persist it.
 
         The body is `{"theme": "<name>"}`. Names are normalized rather than
-        matched literally, so the spellings `--theme` accepts ("unit-01",
+        matched literally, so the spellings `--theme` accepts ("toji",
         "gruvbox-dark") work here too; an unknown one is a 400 instead of the
         silent fall-back `themes.set_theme` performs, because a typo the user
         cannot see is worse than an error they can.
