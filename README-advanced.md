@@ -154,7 +154,7 @@ filter, and the logged session keeps every sample.
 
 ### Window size and columns
 
-Eleven palettes, switchable from the desktop button, the `T` key, the browser
+Thirty-one palettes, switchable from the desktop button, the `T` key, the browser
 GUI's picker, the terminal view's `T`, or `--theme NAME`; the choice is saved to
 `config.json`.
 
@@ -171,12 +171,32 @@ GUI's picker, the terminal view's `T`, or `--theme NAME`; the choice is saved to
 | `gruvbox` | Gruvbox | warm retro terminal |
 | `amber` | Amber CRT | monochrome amber phosphor |
 | `matrix` | Matrix | green phosphor on black |
+| `olivia` | Olivia | soft rose and cream on warm charcoal |
+| `botanical` | Botanical | cream page with deep leaf green |
+| `mizu` | Mizu | pale water blue with deep navy ink |
+| `bow` | BoW | black on white, nothing else |
+| `nautilus` | Nautilus | deep cobalt with brass yellow |
+| `metropolis` | Metropolis | dark teal with cream and rust |
+| `vaporwave` | Vaporwave | pastel lavender with cyan and pink |
+| `serika` | Serika | charcoal with a saturated lemon |
+| `samurai` | Samurai | near-black with gold and deep blue |
+| `hyperfuse` | Hyperfuse | mid grey with purple and cyan |
+| `8008` | 8008 | cool grey with pink and blue |
+| `cafe` | Cafe | cream page, espresso ink, caramel accent |
+| `camping` | Camping | dark forest with tan and moss |
+| `copper` | Copper | dark brown-grey with polished copper |
+| `mudbeam` | Mudbeam | khaki and mud with an olive accent |
+| `peach` | Peach Blossom | peach and cream with terracotta |
+| `burgundy` | Burgundy | deep wine with cream and crimson |
+| `nightrunner` | Night Runner | midnight navy with neon mint |
+| `dolch` | Dolch | warm mid grey with a teal accent |
+| `wob` | WoB | white on black, nothing else |
 
 Shinji is what the program looks like out of the box; the palette this started
 from (`nvtop`) is still there, one click away. Palettes register in source order
 and the first one is the default, so `test_themes.py` asserts both halves of that:
-the character palettes lead in order, and the five that are not character palettes
-follow them.
+the character palettes lead in order, and the twenty-five keycap and original
+palettes follow them.
 
 `python gpumon.py --list-themes` prints them with their series colours.
 Green/amber/red keep their alarm meaning in every theme, including the
@@ -188,8 +208,8 @@ grid, series and alarm colours are all darker so they read on a light page, and
 the parts of the UI that were hardcoded dark (the log button, the scroll
 indicator, the chart threshold line) are derived from the palette instead. Every
 palette colour is also checked against the xterm-256 cube the terminal view falls
-back to when truecolor is unavailable: the worst of the eleven is 51 RGB units
-off, which is why `rei`'s red and green are cube-exact.
+back to when truecolor is unavailable: the worst of the thirty-one is 52 RGB units
+off (Burgundy's accent), which is why `rei`'s red and green are cube-exact.
 
 ### Navigation, in every version
 

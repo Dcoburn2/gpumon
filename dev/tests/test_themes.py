@@ -119,7 +119,7 @@ print("\n[1] the catalogue")
 catalog = themes.catalog()
 keys = [key for key, _label, _blurb in catalog]
 print(f"    {len(keys)} themes: {', '.join(keys)}")
-check("eleven themes are defined", len(keys) == 11, str(len(keys)))
+check("thirty-one themes are defined", len(keys) == 31, str(len(keys)))
 check("the default is first", keys[0] == themes.DEFAULT_KEY, keys[0])
 check("the default is Shinji",
       themes.DEFAULT_KEY == "shinji" and keys[0] == "shinji",
@@ -133,15 +133,20 @@ check("the character palettes lead, in order",
       [k for k in keys if k in CHARACTER_PALETTES] ==
       ["shinji", "rei", "asuka", "touji", "mari", "kaworu"],
       str([k for k in keys if k in CHARACTER_PALETTES]))
-check("five palettes that are not character themes join them",
-      len([k for k in keys if k not in CHARACTER_PALETTES]) == 5,
+check("the rest follow the character palettes",
+      len([k for k in keys if k not in CHARACTER_PALETTES]) == 25,
       str([k for k in keys if k not in CHARACTER_PALETTES]))
 check("every theme has a label and a blurb",
       all(label and blurb for _k, label, blurb in catalog))
 check("labels are unique", len({label for _k, label, _b in catalog}) == len(keys))
-check("exactly one theme is light",
-      len([k for k in keys if is_light(themes.get(k))]) == 1,
-      str([k for k in keys if is_light(themes.get(k))]))
+#: The palettes designed as a light page: the original light one plus the
+#: keycap sets that are light. `is_light` is derived, so this pins which ones
+#: were designed that way rather than how many happen to look bright.
+LIGHT_PALETTES = {"rei", "botanical", "mizu", "bow", "vaporwave", "8008",
+                  "cafe", "peach"}
+check("the light palettes are the eight designed as light pages",
+      {k for k in keys if is_light(themes.get(k))} == LIGHT_PALETTES,
+      str(sorted(k for k in keys if is_light(themes.get(k)))))
 
 print("\n[2] every colour is a valid hex value")
 for key in keys:
@@ -192,7 +197,9 @@ for key in keys:
 print("\n[4] alarm colours keep their meaning")
 # The monochrome themes deliberately do not: they trade hue for a single
 # phosphor, and the alarm level is still carried by the text and the banner.
-MONOCHROME = {"amber"}
+#: Palettes that trade hue for one tone, so green/amber/red have nowhere to
+#: go: the amber CRT and the two black-or-white keycap sets.
+MONOCHROME = {"amber", "bow", "wob"}
 for key in keys:
     p = themes.get(key)
     check(f"{key}: ok/warn/crit are distinct",
@@ -223,6 +230,24 @@ for pair in (("rei", "shinji"), ("shinji", "asuka"), ("asuka", "mari")):
     a, b = (themes.get(k) for k in pair)
     check(f"{pair[0]} and {pair[1]} differ in background and accent",
           a.bg != b.bg and a.accent != b.accent)
+
+# How close the nearest two palettes come, measured across the three colours that
+# decide what one looks like at a glance. Thirty-one palettes are easy to add and
+# just as easy to duplicate, so this is the guard against that: nothing may land on
+# top of anything else. The closest shipped pair is the two character palettes,
+# which are deliberate siblings, so the bar sits just under them.
+closest = None
+for i, first in enumerate(keys):
+    for second in keys[i + 1:]:
+        pa, pb = themes.get(first), themes.get(second)
+        gap = max(rgb_distance(x, y) for x, y in
+                  zip((pa.bg, pa.panel, pa.accent), (pb.bg, pb.panel, pb.accent)))
+        if closest is None or gap < closest[0]:
+            closest = (gap, first, second)
+print(f"    closest pair: {closest[1]} and {closest[2]}, "
+      f"{closest[0]:.0f} RGB units apart")
+check("no two palettes sit on top of each other", closest[0] >= 20.0,
+      f"{closest[1]} and {closest[2]} are only {closest[0]:.0f} apart")
 
 print("\n[7] lookup, aliases and fallbacks")
 check("aliases resolve", themes.normalize("Shinji") == "shinji"

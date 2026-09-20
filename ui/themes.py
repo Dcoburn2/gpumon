@@ -191,6 +191,211 @@ _add(_p(
     series=["#00ff41", "#7cffb2", "#00d4a0", "#b6ff00",
             "#39ff88", "#00b34a", "#a8ff60", "#00e5ff"]))
 
+# --------------------------------------------------------------------------
+# Twenty keycap palettes: each one a mechanical keyboard set's colour story,
+# dark or light as that set is, and none of them sharing a page colour with
+# another.
+# --------------------------------------------------------------------------
+_add(_p(
+    "olivia", "Olivia", "soft rose and cream on warm charcoal",
+    bg="#1a1618", panel="#251e20", panel_alt="#211b1d", border="#625b5b",
+    text="#f2e9e4", text_dim="#908886", text_bright="#f4ede9",
+    accent="#e8a0b4", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#564f4f", selection="#4c383e", plot_bg="#110e10",
+    series=["#eb98af", "#ebab98", "#ebd498", "#bdeb98",
+            "#98ebb8", "#98e6eb", "#9d98eb", "#e198eb",
+            ]))
+
+_add(_p(
+    "botanical", "Botanical", "cream page with deep leaf green",
+    bg="#ece7d9", panel="#f5f1e6", panel_alt="#f2eee1", border="#ced0bf",
+    text="#22331f", text_dim="#878e7f", text_bright="#1c2a19",
+    accent="#3f7d4e", ok="#00875f", warn="#b8860b", crit="#d70000",
+    idle="#c2c3b6", selection="#d1dac8", plot_bg="#b8b4a9",
+    series=["#3b6b47", "#3b6b5f", "#3b5f6b", "#3f3b6b",
+            "#673b6b", "#6b3b4f", "#6b573b", "#586b3b",
+            ]))
+
+_add(_p(
+    "mizu", "Mizu", "pale water blue with deep navy ink",
+    bg="#dfe9f0", panel="#eef4f8", panel_alt="#e9f0f5", border="#c2cedc",
+    text="#14304a", text_dim="#7d8e9e", text_bright="#10273d",
+    accent="#2b6cb0", ok="#00875f", warn="#b8860b", crit="#d70000",
+    idle="#bac5ce", selection="#c7d9ea", plot_bg="#aeb6bb",
+    series=["#22466b", "#23226b", "#48226b", "#6b2252",
+            "#6b2f22", "#6b6022", "#2e6b22", "#226b54",
+            ]))
+
+_add(_p(
+    "bow", "BoW", "black on white, nothing else",
+    bg="#f7f7f7", panel="#ffffff", panel_alt="#fcfcfc", border="#d8d8d8",
+    text="#111111", text_dim="#838383", text_bright="#0e0e0e",
+    accent="#4a4a4a", ok="#6f6f6f", warn="#8a8a8a", crit="#4a4a4a",
+    idle="#c6c6c6", selection="#dbdbdb", plot_bg="#c1c1c1",
+    series=["#2f2f2f", "#3d3d3d", "#4b4b4b", "#595959",
+            "#676767", "#757575", "#838383", "#919191",
+            ]))
+
+_add(_p(
+    "nautilus", "Nautilus", "deep cobalt with brass yellow",
+    bg="#0a1424", panel="#12203a", panel_alt="#0f1c32", border="#555d69",
+    text="#f2ead6", text_dim="#86898b", text_bright="#f4eedd",
+    accent="#ffc94b", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#48505f", selection="#41423d", plot_bg="#060d17",
+    series=["#ebbe56", "#cdeb56", "#82eb56", "#56eba5",
+            "#56b4eb", "#5b56eb", "#eb56e6", "#eb566a",
+            ]))
+
+_add(_p(
+    "metropolis", "Metropolis", "dark teal with cream and rust",
+    bg="#0c1a1c", panel="#14282b", panel_alt="#112326", border="#56615d",
+    text="#f0e6d2", text_dim="#868b82", text_bright="#f3eada",
+    accent="#ff8a5c", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#495653", selection="#433c35", plot_bg="#081112",
+    series=["#eb8a64", "#ebcd64", "#c4eb64", "#64eb74",
+            "#64ebe3", "#6497eb", "#b764eb", "#eb64ae",
+            ]))
+
+_add(_p(
+    "vaporwave", "Vaporwave", "pastel lavender with cyan and pink",
+    bg="#eae4f5", panel="#f4eff9", panel_alt="#f0ebf8", border="#cdc6da",
+    text="#2b2140", text_dim="#8b8499", text_bright="#231b34",
+    accent="#7b5cff", ok="#00875f", warn="#b8860b", crit="#d70000",
+    idle="#c4becd", selection="#dcd2fa", plot_bg="#b7b2bf",
+    series=["#392d6b", "#582d6b", "#6b2d5f", "#6b2f2d",
+            "#6b622d", "#4b6b2d", "#2d6b4e", "#2d556b",
+            ]))
+
+_add(_p(
+    "serika", "Serika", "charcoal with a saturated lemon",
+    bg="#16161a", panel="#202027", panel_alt="#1c1c22", border="#605f62",
+    text="#f5f3ec", text_dim="#8f8e8d", text_bright="#f7f5ef",
+    accent="#ffe000", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#535356", selection="#4d461f", plot_bg="#0e0e11",
+    series=["#ebd223", "#a0eb23", "#3beb23", "#23ebb2",
+            "#237eeb", "#4e23eb", "#eb23c1", "#eb2c23",
+            ]))
+
+_add(_p(
+    "samurai", "Samurai", "near-black with gold and deep blue",
+    bg="#08090c", panel="#101720", panel_alt="#0d1219", border="#515455",
+    text="#e8e2d0", text_dim="#80817c", text_bright="#ece7d8",
+    accent="#d4a017", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#44484a", selection="#37321e", plot_bg="#050608",
+    series=["#ebb72e", "#c1eb2e", "#62eb2e", "#2eeb98",
+            "#2ea1eb", "#3a2eeb", "#eb2ee0", "#eb2e43",
+            ]))
+
+_add(_p(
+    "hyperfuse", "Hyperfuse", "mid grey with purple and cyan",
+    bg="#202226", panel="#2a2d31", panel_alt="#26292d", border="#626568",
+    text="#e6e8ea", text_dim="#8c8e91", text_bright="#eaecee",
+    accent="#7d5bbe", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#575a5d", selection="#3b364d", plot_bg="#151619",
+    series=["#a27deb", "#d97deb", "#eb7dc5", "#eb907d",
+            "#eaeb7d", "#a0eb7d", "#7debc7", "#7db3eb",
+            ]))
+
+_add(_p(
+    "8008", "8008", "cool grey with pink and blue",
+    bg="#dfe0e4", panel="#eceef1", panel_alt="#e7e9ec", border="#c3c5cc",
+    text="#1c1f26", text_dim="#808287", text_bright="#17191f",
+    accent="#c8588c", ok="#00875f", warn="#b8860b", crit="#d70000",
+    idle="#babcc0", selection="#e5d0dd", plot_bg="#aeafb2",
+    series=["#6b354e", "#6b3735", "#6b5235", "#576b35",
+            "#356b40", "#356b64", "#353c6b", "#5b356b",
+            ]))
+
+_add(_p(
+    "cafe", "Cafe", "cream page, espresso ink, caramel accent",
+    bg="#efe6d8", panel="#f7f1e6", panel_alt="#f4ede1", border="#d3c8bd",
+    text="#2e2318", text_dim="#8e867b", text_bright="#261d14",
+    accent="#b06a2c", ok="#00875f", warn="#b8860b", crit="#d70000",
+    idle="#c7c0b5", selection="#e9d6c1", plot_bg="#bab3a8",
+    series=["#6b4523", "#6b6923", "#496b23", "#236b39",
+            "#23616b", "#23316b", "#5d236b", "#6b233d",
+            ]))
+
+_add(_p(
+    "camping", "Camping", "dark forest with tan and moss",
+    bg="#0f1512", panel="#16201b", panel_alt="#141c18", border="#555b52",
+    text="#e8e4d4", text_dim="#83867b", text_bright="#ece9dc",
+    accent="#7fae5a", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#484f47", selection="#2b3c28", plot_bg="#0a0e0c",
+    series=["#b2eb85", "#85eb8b", "#85ebbe", "#85c2eb",
+            "#9b85eb", "#e085eb", "#eb8590", "#ebcf85",
+            ]))
+
+_add(_p(
+    "copper", "Copper", "dark brown-grey with polished copper",
+    bg="#17120f", panel="#221a16", panel_alt="#1e1714", border="#5f554e",
+    text="#ecdfd2", text_dim="#8b8078", text_bright="#efe5da",
+    accent="#c8763f", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#524943", selection="#432c1e", plot_bg="#0f0c0a",
+    series=["#eb945a", "#ebdc5a", "#b0eb5a", "#5aeb7c",
+            "#5ae1eb", "#5a80eb", "#c45aeb", "#eb5a99",
+            ]))
+
+_add(_p(
+    "mudbeam", "Mudbeam", "khaki and mud with an olive accent",
+    bg="#2a2a22", panel="#34342a", panel_alt="#303027", border="#6a695d",
+    text="#e9e5d4", text_dim="#929082", text_bright="#edeadc",
+    accent="#8a9a5b", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#5f5e53", selection="#454834", plot_bg="#1b1b16",
+    series=["#d5eb94", "#aaeb94", "#94ebaa", "#94e3eb",
+            "#949beb", "#c794eb", "#eb94b8", "#ebb894",
+            ]))
+
+_add(_p(
+    "peach", "Peach Blossom", "peach and cream with terracotta",
+    bg="#f3e3dc", panel="#faf0ea", panel_alt="#f8ebe5", border="#d8c8c2",
+    text="#3a2620", text_dim="#968781", text_bright="#301f1a",
+    accent="#ca6652", ok="#00875f", warn="#b8860b", crit="#d70000",
+    idle="#ccc0ba", selection="#f0d4cc", plot_bg="#beb1ac",
+    series=["#6b3b32", "#6b5832", "#616b32", "#326b32",
+            "#326b61", "#324e6b", "#4e326b", "#6b3258",
+            ]))
+
+_add(_p(
+    "burgundy", "Burgundy", "deep wine with cream and crimson",
+    bg="#17090d", panel="#240f15", panel_alt="#1f0d12", border="#614e50",
+    text="#f0e2d8", text_dim="#8e7d7a", text_bright="#f3e7df",
+    accent="#b0304a", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#554244", selection="#401620", plot_bg="#0f0608",
+    series=["#eb5170", "#eb7e51", "#ebcc51", "#89eb51",
+            "#51eb98", "#51d6eb", "#6551eb", "#e551eb",
+            ]))
+
+_add(_p(
+    "nightrunner", "Night Runner", "midnight navy with neon mint",
+    bg="#070b14", panel="#0e1520", panel_alt="#0c121c", border="#4f575d",
+    text="#e6f0ea", text_dim="#7e8789", text_bright="#eaf3ee",
+    accent="#37e6a0", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#424a50", selection="#163f3a", plot_bg="#05070d",
+    series=["#4aebaa", "#4adbeb", "#4a8aeb", "#904aeb",
+            "#eb4ac0", "#eb4a54", "#ebe04a", "#70eb4a",
+            ]))
+
+_add(_p(
+    "dolch", "Dolch", "warm mid grey with a teal accent",
+    bg="#26241f", panel="#312e28", panel_alt="#2d2a25", border="#69655e",
+    text="#ebe6dc", text_dim="#928e86", text_bright="#efeae2",
+    accent="#3fa7a0", ok="#7ee787", warn="#ffc247", crit="#ff4d6d",
+    idle="#5e5a53", selection="#344640", plot_bg="#191714",
+    series=["#67ebe2", "#67b2eb", "#6770eb", "#cc67eb",
+            "#eb679c", "#eb8a67", "#c8eb67", "#67eb74",
+            ]))
+
+_add(_p(
+    "wob", "WoB", "white on black, nothing else",
+    bg="#000000", panel="#0f0f0f", panel_alt="#0b0b0b", border="#5a5a5a",
+    text="#ffffff", text_dim="#9a9a9a", text_bright="#ffffff",
+    accent="#ffffff", ok="#cfcfcf", warn="#a8a8a8", crit="#efefef",
+    idle="#3f3f3f", selection="#2a2a2a", plot_bg="#050505",
+    series=["#383838", "#4a4a4a", "#5c5c5c", "#707070",
+            "#8a8a8a", "#a3a3a3", "#c4c4c4", "#e6e6e6",
+            ]))
+
 #: Relaxed spellings people actually type, mapped onto a real key. A theme's
 #: own key does not need an entry: `normalize` checks those first.
 ALIASES = {
