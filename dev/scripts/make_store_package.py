@@ -57,9 +57,11 @@ IDENTITY_DISPLAY_NAME = os.environ.get("GPUMON_STORE_DISPLAY_NAME",
 #: carried the processor name, 1.0.3.0 the chart resizing and hover readout,
 #: 1.0.4.0 the corrected release checksum, 1.0.5.0 the single-file download,
 #: 1.0.6.0 the Windows-only calls that broke off Windows, 1.0.7.0 the PawnIO
-#: installer switch that never worked, and 1.0.8.0 the readme and screenshots the
-#: project page shows, with the images the Linux tarball had been missing.
-VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.8.0")
+#: installer switch that never worked, 1.0.8.0 the readme and screenshots the
+#: project page shows, and 1.0.9.0 the AMD sensor failures that were reported as a
+#: missing module whatever the cause, a helper that quit early on a heartbeat left
+#: over from an earlier run, and one card treated as though it were two.
+VERSION = os.environ.get("GPUMON_STORE_VERSION", "1.0.9.0")
 
 #: Tile sizes Microsoft requires, and the background the tiles are drawn on -
 #: the default theme's panel colour, so the Store listing looks like the program.
