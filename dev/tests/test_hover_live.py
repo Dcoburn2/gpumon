@@ -177,11 +177,18 @@ labels: list[str] = []
 def collect(widget) -> None:
     try:
         value = widget.cget("text")
-        if value:
-            labels.append(str(value))
     except tk.TclError:
-        pass
-    for child in widget.winfo_children():
+        value = ""          # not every widget has a text option
+    if value:
+        labels.append(str(value))
+    try:
+        children = widget.winfo_children()
+    except tk.TclError:
+        # This walks a live widget tree while the desktop is also tearing windows
+        # down, so a window can go away between one call and the next. Asking a
+        # destroyed widget for its children raises rather than returning nothing.
+        return
+    for child in children:
         collect(child)
 
 
@@ -199,7 +206,11 @@ charts = []
 def find_charts(widget) -> None:
     if isinstance(widget, W.TimeSeriesChart):
         charts.append(widget)
-    for child in widget.winfo_children():
+    try:
+        children = widget.winfo_children()
+    except tk.TclError:
+        return
+    for child in children:
         find_charts(child)
 
 
