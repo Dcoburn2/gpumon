@@ -1683,6 +1683,14 @@ class SensorManager:
                 luid_confidence=confidence))
             next_index += 1
 
+        # ADL loaded and listed adapters, and not one of them was a card this
+        # machine knows about. That case used to be silent: the cards above simply
+        # had no ADL source, and a silent backend looks exactly like a broken one.
+        if adl_ok and adl_by_pci and not any("adl" in g.sources for g in gpus):
+            self.backend_errors["adl"] = (
+                f"ADL listed {len(adl_by_pci)} adapter(s) and none matched a card "
+                f"({', '.join(sorted(adl_by_pci))})")
+
         # Any LUID not attributed to a card still gets monitored rather than
         # silently dropped, so utilisation is never lost.
         attributed = {l for g in gpus for l in g.luids}

@@ -109,6 +109,38 @@ for g in sm.gpus:
 print("\nnotes:")
 for note in sm.capabilities().notes:
     print(f"  * {note}")
+
+print("\n[the AMD loader can always say what it did]")
+# The failure this guards against was silence: a packaged build lost ADL where a
+# portable one kept it, and the only symptom was a card with no temperature. It
+# has to be possible to ask which library loaded, which candidates were refused,
+# and how many adapters came back - on any platform, with or without the driver.
+import amdsensors  # noqa: E402
+
+
+def check(label: str, ok: bool, detail: str = "") -> None:
+    print(f"  {'OK  ' if ok else 'FAIL'} {label}{'  ' + detail if detail else ''}")
+    if not ok:
+        problems.append(label)
+
+
+loader = amdsensors.AmdAdlBackend()
+loader.available()      # opens the driver if there is one, and does no harm if not
+report = loader.report()
+for line in report:
+    print(f"    {line}")
+check("the report is a list of lines", bool(report)
+      and all(isinstance(line, str) and line for line in report))
+check("it names which library loaded, or why none did",
+      bool(loader.dll_source) or bool(loader.error),
+      f"dll={loader.dll_source!r} error={loader.error!r}")
+check("refused candidates are kept, not swallowed",
+      isinstance(loader.load_errors, list),
+      str(loader.load_errors))
+check("it says the adapter count, or that it never got opened",
+      any("adapter" in line or "not initialised" in line for line in report),
+      " | ".join(report))
+
 sm.close()
 
 if problems:

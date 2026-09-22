@@ -286,6 +286,13 @@ class AmdAdlBackend:
         #: `--vram-report` and the self-test: it is the difference between
         #: working AMD telemetry and none at all on this driver.
         self.adapter_info_source = ""
+        #: Which candidate DLL loaded, and what each one said when it did not, so
+        #: a run that ends up with no AMD sensors can be asked why. A packaged
+        #: build can lose this loader where a portable one keeps it - the same
+        #: card, the same driver, one `[pdh]` and no temperature.
+        self.dll_source = ""
+        self.load_errors: list[str] = []
+        self.adapter_count = 0
         self._malloc = None
         self._allocations: list[int] = []
         self._pmlog_ready: set[int] = set()
@@ -304,16 +311,44 @@ class AmdAdlBackend:
             return
         for candidate in self.DLL_CANDIDATES:
             if os.path.sep in candidate and not os.path.exists(candidate):
+                self.load_errors.append(f"{candidate}: not there")
                 continue
             try:
                 # Cdecl: LHM declares these with CallingConvention.Cdecl, and a
                 # stdcall call here faults instead of returning a status.
                 self.dll = ctypes.CDLL(candidate)
+                self.dll_source = candidate
                 break
-            except OSError:
+            except OSError as exc:
+                self.load_errors.append(f"{candidate}: {exc}")
                 continue
         if self.dll is None:
             self.error = "atiadlxx.dll not found"
+
+    def report(self) -> list[str]:
+        """What the ADL path did, in the order it did it.
+
+        Printed at startup and by `--vram-report`, which matters more than it
+        sounds: a packaged build can lose this loader where a portable one keeps
+        it, and without these lines the only symptom is a GPU card with no
+        temperature, no clocks and no power - the same silence for a DLL that was
+        refused, a driver that returned an error, and a driver that returned
+        nothing at all.
+        """
+        lines = [f"adl: dll={self.dll_source or 'not loaded'}"]
+        for failure in self.load_errors:
+            lines.append(f"adl: rejected {failure}")
+        if self.error:
+            lines.append(f"adl: {self.error}")
+        if not self.context:
+            # Asked before anything was opened: say that rather than reporting a
+            # count of zero as though the driver had answered.
+            lines.append("adl: not initialised yet")
+        else:
+            lines.append(f"adl: {len(self.adapters)} usable of "
+                         f"{self.adapter_count} adapter(s), device list "
+                         f"{self.adapter_info_source or 'not read'}")
+        return lines
 
     def _declare(self) -> None:
         d = self.dll
@@ -455,8 +490,14 @@ class AmdAdlBackend:
 
         count = ctypes.c_int(0)
         rc = self._f_num(self.context, ctypes.byref(count))
-        if rc != ADL_OK or count.value <= 0:
+        if rc != ADL_OK:
             self.error = f"NumberOfAdapters returned {status_name(rc)}"
+            return False
+        self.adapter_count = max(0, count.value)
+        if count.value <= 0:
+            # ADL_OK with nothing in it, which used to be reported as
+            # "NumberOfAdapters returned ADL_OK" and read like success.
+            self.error = "ADL enumerated no adapters"
             return False
 
         buffer = self._adapter_info_buffer(count.value)

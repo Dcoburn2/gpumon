@@ -465,6 +465,8 @@ def vram_report() -> int:
               f"pct={f'{pct:.1f}%' if isinstance(pct, float) else 'n/a'}")
 
     print("\n2. ADL: ADL2_Adapter_DedicatedVRAMUsage_Get, per adapter")
+    for line in manager.amd.report():
+        print(f"  {line}")
     if manager.amd.available():
         for a in manager.amd.adapters:
             mb = manager.amd._dedicated_vram(a.index)
@@ -591,6 +593,11 @@ def launch_gui(args: argparse.Namespace, config: dict) -> int:
     _install_crash_logging(root)
     _apply_window_icon(root)
     from ui.monitor import MonitorApp
+    # Where the AMD loader got to, before the window opens. A windowed launch
+    # sends stdout to the launch log, so a packaged build that has lost ADL says
+    # so there rather than only showing a card with no temperature.
+    for line in manager.amd.report():
+        print(line)
     MonitorApp(root, manager, store, sampler)
     root.mainloop()
     return 0
